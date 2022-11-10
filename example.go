@@ -1,5 +1,3 @@
-// go mod init /Users/pavlo.kuzmin/Documents/Internship/1
-
 package main
 
 import (
@@ -17,7 +15,6 @@ func reverse(s *string) string {
 }
 
 func main() {
-	//fmt.Fprintln(os.Stdout, "hello, world")
 
 	arg := os.Args[1]
 
