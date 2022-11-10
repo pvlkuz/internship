@@ -20,4 +20,15 @@ func main() {
 
 	arg := os.Args[1]
 	fmt.Println(reverse(&arg))
+
+	f, err := os.Create("out.txt")
+	if err != nil {
+		panic(err)
+	}
+	//defer f.Close()
+	_, err2 := f.WriteString(reverse(&arg))
+	if err2 != nil {
+		panic(err)
+	}
+	f.Close()
 }
