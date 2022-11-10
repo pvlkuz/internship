@@ -3,6 +3,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"os"
 )
@@ -19,16 +20,23 @@ func main() {
 	//fmt.Fprintln(os.Stdout, "hello, world")
 
 	arg := os.Args[1]
-	fmt.Println(reverse(&arg))
 
-	f, err := os.Create("out.txt")
-	if err != nil {
-		panic(err)
+	useFile := flag.String("f", "default", "file output")
+	flag.Parse()
+	if *useFile != "default" {
+
+		arg := os.Args[2]
+		f, err := os.Create(*useFile)
+		if err != nil {
+			panic(err)
+		}
+		_, err2 := f.WriteString(reverse(&arg))
+		if err2 != nil {
+			panic(err)
+		}
+		f.Close()
+
+	} else {
+		fmt.Println(reverse(&arg))
 	}
-	//defer f.Close()
-	_, err2 := f.WriteString(reverse(&arg))
-	if err2 != nil {
-		panic(err)
-	}
-	f.Close()
 }
