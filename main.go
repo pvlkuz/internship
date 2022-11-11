@@ -55,7 +55,8 @@ func main() {
 
 	case "transform":
 
-		transform.Parse(os.Args[2:])
+		err := transform.Parse(os.Args[2:])
+		checkError(err)
 		if useOut != "default" {
 
 			fmt.Println("subcommand 'transform' with flag 'file output'")
@@ -67,8 +68,8 @@ func main() {
 		} else if useIN != "default" {
 
 			fmt.Println("subcommand 'transform' with flag 'file input'")
-			dat, err3 := os.ReadFile(useIN)
-			checkError(err3)
+			dat, err := os.ReadFile(useIN)
+			checkError(err)
 			fmt.Println(reverse(string(dat)))
 
 		} else if useC != 0 {
@@ -90,7 +91,8 @@ func main() {
 
 	case "html":
 
-		html.Parse(os.Args[2:])
+		err := html.Parse(os.Args[2:])
+		checkError(err)
 		fmt.Println("subcommand 'html'")
 
 	default:
