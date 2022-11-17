@@ -42,7 +42,7 @@ func main() {
 	var useC int
 	transform.StringVar(&useOut, "f", "default", "file output")
 	transform.StringVar(&useIN, "fi", "default", "file input")
-	transform.IntVar(&useC, "c", 0, "caesar")
+	transform.IntVar(&useC, "c", 123321, "caesar")
 	html := flag.NewFlagSet("html", flag.ExitOnError)
 	html.Int("port", 0, "port")
 
@@ -72,7 +72,7 @@ func main() {
 			checkError(err)
 			fmt.Println(reverse(string(dat)))
 
-		} else if useC != 0 {
+		} else if useC != 0 && useC != 123321 {
 
 			fmt.Println("subcommand 'transform' with flag 'caesar'")
 			fmt.Println(caesar(transform.Args()[0], useC))
