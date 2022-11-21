@@ -63,7 +63,7 @@ func main() {
 	cmd.StringVar(&config.FileIn, "input_file", "default", "file input")
 	cmd.BoolVar(&config.StdOut, "output_std", true, "stdOUT")
 	cmd.StringVar(&config.FileOut, "output_file", "default", "file output")
-	err := cmd.Parse(os.Args[2:])
+	err := cmd.Parse(os.Args)
 	if err != nil {
 		log.Print(fmt.Errorf("error in persing flags: %w", err))
 		return
@@ -71,31 +71,33 @@ func main() {
 
 	//cmd.IntVar(&useC, "c", 123321, "caesar")
 
-	fmt.Println(config.StdIN, config.FileIn, config.StdOut, config.FileOut)
-
 	if len(os.Args) < 2 {
 		fmt.Println("expected subcommand")
 		return
 	}
 
-	if config.FileIn != "default" {
+	switch {
+	case config.FileIn != "default":
 		f, err := os.Open(config.FileIn)
 		if err != nil {
 			log.Print(fmt.Errorf("error in opening input file: %w", err))
 		}
 		defer f.Close()
+
 		in = f
-	} else {
+	default:
 		in = os.Stdin
 	}
 
-	if config.FileOut != "default" {
+	switch {
+	case config.FileOut != "default":
 		f, err := os.Create(config.FileOut)
 		if err != nil {
 			log.Print(fmt.Errorf("error in creating output file: %w", err))
 		}
+
 		out = f
-	} else {
+	default:
 		out = os.Stdout
 	}
 
