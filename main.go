@@ -1,6 +1,7 @@
 package main
 
 import (
+	b64 "encoding/base64"
 	"flag"
 	"fmt"
 	"io"
@@ -31,13 +32,20 @@ func reverse(s string) string {
 	return string(rns)
 }
 
-func transform(in io.Reader, out io.Writer) error {
-	b, err := io.ReadAll(in)
+func transform(in io.Reader, out io.Writer, C int, B bool) error {
+	f, err := io.ReadAll(in)
 	if err != nil {
 		return fmt.Errorf("read input error: %w", err)
 	}
 
-	result := reverse(string(b))
+	var result string
+	if B {
+		result = b64.URLEncoding.EncodeToString(f)
+	} else if C != 123321 {
+		result = caesar(string(f), C)
+	} else {
+		result = reverse(string(f))
+	}
 
 	_, err = out.Write([]byte(result))
 	if err != nil {
@@ -57,24 +65,25 @@ func main() {
 	var in io.Reader
 	var out io.Writer
 	var config Config
+	var useC int
+	var useB bool
 
 	cmd := flag.NewFlagSet("transform", flag.ExitOnError)
 	cmd.BoolVar(&config.StdIN, "input_stdin", true, "stnIN")
-	cmd.StringVar(&config.FileIn, "input_file", "default", "file input")
+	cmd.StringVar(&config.FileIn, "input", "default", "file input")
 	cmd.BoolVar(&config.StdOut, "output_std", true, "stdOUT")
-	cmd.StringVar(&config.FileOut, "output_file", "default", "file output")
-	err := cmd.Parse(os.Args[2:])
-	if err != nil {
-		log.Print(fmt.Errorf("error in persing flags: %w", err))
-		return
-	}
-
-	//cmd.IntVar(&useC, "c", 123321, "caesar")
-
-	fmt.Println(config.StdIN, config.FileIn, config.StdOut, config.FileOut)
+	cmd.StringVar(&config.FileOut, "output", "default", "file output")
+	cmd.IntVar(&useC, "c", 123321, "caesar")
+	cmd.BoolVar(&useB, "base64", false, "base64")
 
 	if len(os.Args) < 2 {
 		fmt.Println("expected subcommand")
+		return
+	}
+
+	err := cmd.Parse(os.Args[2:])
+	if err != nil {
+		log.Print(fmt.Errorf("error in persing flags: %w", err))
 		return
 	}
 
@@ -101,11 +110,13 @@ func main() {
 
 	switch os.Args[1] {
 	case "transform":
-		err = transform(in, out)
+		err = transform(in, out, useC, useB)
 		if err != nil {
 			log.Print(fmt.Errorf("error in transfroming: %w", err))
 			return
 		}
+	case "http":
+
 	}
 
 }
