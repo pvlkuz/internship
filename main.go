@@ -115,7 +115,6 @@ func main() {
 			log.Print(fmt.Errorf("error in transfroming: %w", err))
 			return
 		}
-	case "http":
 
 	}
 
