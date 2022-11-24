@@ -6,7 +6,9 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"net/http"
 	"os"
+	"strconv"
 )
 
 func caesar(s string, shift int) string {
@@ -40,7 +42,7 @@ func transform(in io.Reader, out io.Writer, C int, B bool) error {
 
 	var result string
 	if B {
-		result = b64.URLEncoding.EncodeToString(f)
+		result = b64.StdEncoding.EncodeToString(f)
 	} else if C != 123321 {
 		result = caesar(string(f), C)
 	} else {
@@ -55,6 +57,46 @@ func transform(in io.Reader, out io.Writer, C int, B bool) error {
 	return nil
 }
 
+func ReverseHandler(w http.ResponseWriter, r *http.Request) {
+
+	reqBody, err := io.ReadAll(r.Body)
+	if err != nil {
+		http.Error(w, "could not read request body", http.StatusBadRequest)
+	}
+	_, err = w.Write([]byte(reverse(string(reqBody))))
+	if err != nil {
+		http.Error(w, "write output error", http.StatusBadRequest)
+	}
+}
+
+func CaesarHandler(w http.ResponseWriter, r *http.Request) {
+	shiftStr := r.FormValue("shift")
+	shift, err := strconv.Atoi(shiftStr)
+	if err != nil {
+		http.Error(w, "No integer shift given", http.StatusBadRequest)
+		return
+	}
+	reqBody, err := io.ReadAll(r.Body)
+	if err != nil {
+		http.Error(w, "could not read request body", http.StatusBadRequest)
+	}
+	_, err = w.Write([]byte(caesar(string(reqBody), shift)))
+	if err != nil {
+		http.Error(w, "write output error", http.StatusBadRequest)
+	}
+}
+
+func Base64Handler(w http.ResponseWriter, r *http.Request) {
+	reqBody, err := io.ReadAll(r.Body)
+	if err != nil {
+		http.Error(w, "could not read request body", http.StatusBadRequest)
+	}
+	_, err = w.Write([]byte(b64.StdEncoding.EncodeToString(reqBody)))
+	if err != nil {
+		http.Error(w, "write output error", http.StatusBadRequest)
+	}
+}
+
 type Config struct {
 	StdIN, StdOut   bool
 	FileIn, FileOut string
@@ -67,6 +109,7 @@ func main() {
 	var config Config
 	var useC int
 	var useB bool
+	var port string
 
 	cmd := flag.NewFlagSet("transform", flag.ExitOnError)
 	cmd.BoolVar(&config.StdIN, "input_stdin", true, "stnIN")
@@ -75,6 +118,9 @@ func main() {
 	cmd.StringVar(&config.FileOut, "output", "default", "file output")
 	cmd.IntVar(&useC, "c", 123321, "caesar")
 	cmd.BoolVar(&useB, "base64", false, "base64")
+
+	cmd1 := flag.NewFlagSet("serve", flag.ExitOnError)
+	cmd1.StringVar(&port, "port", ":8080", "server port")
 
 	if len(os.Args) < 2 {
 		fmt.Println("expected subcommand")
@@ -115,7 +161,11 @@ func main() {
 			log.Print(fmt.Errorf("error in transfroming: %w", err))
 			return
 		}
-
+	case "serve":
+		http.HandleFunc("/reverse", ReverseHandler)
+		http.HandleFunc("/caesar", CaesarHandler)
+		http.HandleFunc("/base64", Base64Handler)
+		log.Fatal(http.ListenAndServe(port, nil))
 	}
 
 }
