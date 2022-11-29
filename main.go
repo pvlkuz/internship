@@ -1,7 +1,7 @@
 package main
 
 import (
-	b64 "encoding/base64"
+	"encoding/base64"
 	"flag"
 	"fmt"
 	"io"
@@ -11,10 +11,28 @@ import (
 	"strconv"
 )
 
-func caesar(s string, shift int) string {
-	rns := []rune(s)
+type Transformer interface {
+	Transform(in io.Reader) (string, error)
+}
+
+type CaesarTransformer struct {
+	Shift int
+}
+
+func NewCaesarTransformer(shift int) *CaesarTransformer {
+	return &CaesarTransformer{Shift: shift}
+}
+
+func (t *CaesarTransformer) Transform(in io.Reader) (string, error) {
+	var result string
+	f, err := io.ReadAll(in)
+	if err != nil {
+		return result, err
+	}
+
+	rns := []rune(string(f))
 	for i := 0; i < len(rns); i++ {
-		r := int(rns[i]) + shift
+		r := int(rns[i]) + t.Shift
 		if r > 'z' {
 			rns[i] = rune(r - 26)
 		} else if r < 'a' {
@@ -23,30 +41,60 @@ func caesar(s string, shift int) string {
 			rns[i] = rune(r)
 		}
 	}
-	return string(rns)
+	result = string(rns)
+
+	return result, nil
 }
 
-func reverse(s string) string {
-	rns := []rune(s)
+type ReverseTransformer struct{}
+
+func NewReverseTransformer() *ReverseTransformer {
+	return &ReverseTransformer{}
+}
+
+func (t *ReverseTransformer) Transform(in io.Reader) (string, error) {
+	var result string
+	f, err := io.ReadAll(in)
+	if err != nil {
+		return result, err
+	}
+
+	rns := []rune(string(f))
 	for i, j := 0, len(rns)-1; i < j; i, j = i+1, j-1 {
 		rns[i], rns[j] = rns[j], rns[i]
 	}
-	return string(rns)
+	result = string(rns)
+	return result, nil
+}
+
+type Base64Transformer struct{}
+
+func NewBase64Transformer() *Base64Transformer {
+	return &Base64Transformer{}
+}
+
+func (t *Base64Transformer) Transform(in io.Reader) (string, error) {
+	var result string
+	f, err := io.ReadAll(in)
+	if err != nil {
+		return result, err
+	}
+	result = base64.StdEncoding.EncodeToString(f)
+	return result, nil
 }
 
 func transform(in io.Reader, out io.Writer, C int, B bool) error {
-	f, err := io.ReadAll(in)
-	if err != nil {
-		return fmt.Errorf("read input error: %w", err)
-	}
-
 	var result string
+	var err error
 	if B {
-		result = b64.StdEncoding.EncodeToString(f)
+		result, err = NewBase64Transformer().Transform(in)
 	} else if C != 123321 {
-		result = caesar(string(f), C)
+		result, err = NewCaesarTransformer(C).Transform(in)
 	} else {
-		result = reverse(string(f))
+		result, err = NewReverseTransformer().Transform(in)
+	}
+	if err != nil {
+		return fmt.Errorf("TRANSFORMER error: %w", err)
 	}
 
 	_, err = out.Write([]byte(result))
@@ -58,14 +106,15 @@ func transform(in io.Reader, out io.Writer, C int, B bool) error {
 }
 
 func ReverseHandler(w http.ResponseWriter, r *http.Request) {
-
-	reqBody, err := io.ReadAll(r.Body)
+	result, err := NewReverseTransformer().Transform(r.Body)
 	if err != nil {
-		http.Error(w, "could not read request body", http.StatusBadRequest)
+		http.Error(w, "Server ReverseHandler Transformer error", http.StatusBadRequest)
+		return
 	}
-	_, err = w.Write([]byte(reverse(string(reqBody))))
+	_, err = w.Write([]byte(result))
 	if err != nil {
-		http.Error(w, "write output error", http.StatusBadRequest)
+		http.Error(w, "server write output error", http.StatusBadRequest)
+		return
 	}
 }
 
@@ -76,24 +125,29 @@ func CaesarHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "No integer shift given", http.StatusBadRequest)
 		return
 	}
-	reqBody, err := io.ReadAll(r.Body)
+	result, err := NewCaesarTransformer(shift).Transform(r.Body)
 	if err != nil {
-		http.Error(w, "could not read request body", http.StatusBadRequest)
+		http.Error(w, "Server CaesarHandler Transformer error", http.StatusBadRequest)
+		return
 	}
-	_, err = w.Write([]byte(caesar(string(reqBody), shift)))
+	_, err = w.Write([]byte(result))
 	if err != nil {
-		http.Error(w, "write output error", http.StatusBadRequest)
+		http.Error(w, "server write output error", http.StatusBadRequest)
+		return
 	}
 }
 
 func Base64Handler(w http.ResponseWriter, r *http.Request) {
-	reqBody, err := io.ReadAll(r.Body)
+	result, err := NewBase64Transformer().Transform(r.Body)
 	if err != nil {
-		http.Error(w, "could not read request body", http.StatusBadRequest)
+		http.Error(w, "Server Bae64Handler Transformer error", http.StatusBadRequest)
+		return
 	}
-	_, err = w.Write([]byte(b64.StdEncoding.EncodeToString(reqBody)))
+
+	_, err = w.Write([]byte(result))
 	if err != nil {
-		http.Error(w, "write output error", http.StatusBadRequest)
+		http.Error(w, "server write output error", http.StatusBadRequest)
+		return
 	}
 }
 
