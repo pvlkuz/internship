@@ -5,10 +5,13 @@ import (
 	"fmt"
 	"io"
 	"log"
-	"main/handler"
+	"main/crud_handler"
+	"main/transform_handler"
 	"main/transformer"
 	"net/http"
 	"os"
+
+	"github.com/gorilla/mux"
 )
 
 func transform(in io.Reader, out io.Writer, CaesarShift int, Base64Use bool) error {
@@ -82,7 +85,6 @@ func main() {
 	} else {
 		in = os.Stdin
 	}
-
 	if config.FileOut != "default" {
 		f, err := os.Create(config.FileOut)
 		if err != nil {
@@ -101,10 +103,16 @@ func main() {
 			return
 		}
 	case "serve":
-		http.HandleFunc("/reverse", handler.ReverseHandler)
-		http.HandleFunc("/caesar", handler.CaesarHandler)
-		http.HandleFunc("/base64", handler.Base64Handler)
-		log.Fatal(http.ListenAndServe(port, nil))
+		router := mux.NewRouter()
+		router.HandleFunc("/reverse", transform_handler.ReverseHandler)
+		router.HandleFunc("/caesar", transform_handler.CaesarHandler)
+		router.HandleFunc("/base64", transform_handler.Base64Handler)
+		log.Fatal(http.ListenAndServe(port, router))
+	case "crud":
+		router := mux.NewRouter()
+		router.HandleFunc("/records/{uuid}", crud_handler.HandleRecord)
+		router.HandleFunc("/records", crud_handler.HandleRecords)
+		log.Fatal(http.ListenAndServe(":8080", router))
 	}
 
 }
