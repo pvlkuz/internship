@@ -14,7 +14,6 @@ import (
 )
 
 type TransformRequest struct {
-	Id          string `json:"uuid"`
 	Type        string `json:"type"`
 	CaesarShift int    `json:"shift,omitempty"`
 	Input       string `json:"input,omitempty"`
@@ -32,9 +31,9 @@ type TransformResult struct {
 // Fake database just for example
 var temp1, temp2, temp3 = uuid.NewString(), uuid.NewString(), uuid.NewString()
 var TransformRequests = map[string]*TransformRequest{
-	temp1: &TransformRequest{Id: temp1, Type: "reverse", Input: "123456789"},
-	temp2: &TransformRequest{Id: temp2, Type: "base64", Input: "Man"},
-	temp3: &TransformRequest{Id: temp3, Type: "caesar", CaesarShift: 1, Input: "zab"},
+	temp1: &TransformRequest{Type: "reverse", Input: "123456789"},
+	temp2: &TransformRequest{Type: "base64", Input: "Man"},
+	temp3: &TransformRequest{Type: "caesar", CaesarShift: 1, Input: "zab"},
 }
 var TransformResults = map[string]*TransformResult{
 	temp1: &TransformResult{Id: temp1, Type: "reverse", Result: "987654321", Created_at: time.Now().Unix()},
@@ -51,7 +50,6 @@ func SetJSONContentType(next http.Handler) http.Handler {
 
 func HandlePost(w http.ResponseWriter, r *http.Request) {
 	request := new(TransformRequest)
-	request.Id = uuid.NewString()
 	dec := json.NewDecoder(r.Body)
 	err := dec.Decode(&request)
 	if err != nil {
@@ -70,7 +68,6 @@ func HandlePost(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "expected input field", http.StatusInternalServerError)
 		return
 	}
-	TransformRequests[request.Id] = request
 	fmt.Fprintln(w, "Status ", http.StatusCreated, ": ", http.StatusText(http.StatusCreated))
 
 	result := new(TransformResult)
