@@ -11,7 +11,7 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/gorilla/mux"
+	"github.com/go-chi/chi/v5"
 )
 
 func transform(in io.Reader, out io.Writer, CaesarShift int, Base64Use bool) error {
@@ -103,15 +103,19 @@ func main() {
 			return
 		}
 	case "serve":
-		router := mux.NewRouter()
+		router := chi.NewRouter()
 		router.HandleFunc("/reverse", transform_handler.ReverseHandler)
 		router.HandleFunc("/caesar", transform_handler.CaesarHandler)
 		router.HandleFunc("/base64", transform_handler.Base64Handler)
 		log.Fatal(http.ListenAndServe(port, router))
 	case "crud":
-		router := mux.NewRouter()
-		router.HandleFunc("/records/{uuid}", crud_handler.HandleRecord)
-		router.HandleFunc("/records", crud_handler.HandleRecords)
+		router := chi.NewRouter()
+		router.Use(crud_handler.SetJSONContentType)
+		router.Post("/records", crud_handler.HandlePost)
+		router.Get("/records", crud_handler.HandleGetAll)
+		router.Get("/records/{uuid}", crud_handler.HandleGet)
+		router.Delete("/records/{uuid}", crud_handler.HandleDelete)
+		router.Put("/records/{uuid}", crud_handler.HandlePut)
 		log.Fatal(http.ListenAndServe(":8080", router))
 	}
 
