@@ -1,5 +1,5 @@
 
-CREATE TABLE Records
+CREATE TABLE IF NOT EXISTS Records
 (
      id UUID PRIMARY KEY, 
      transform_type TEXT NOT NULL,

@@ -14,6 +14,8 @@ services:
     build: .
     #image: myapp
     restart: "no"
+    depends_on:
+      - db
     links:
       - "db:database"
     ports:
