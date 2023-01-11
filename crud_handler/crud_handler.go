@@ -190,22 +190,25 @@ func (h *Handler) HandlePut(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	result := &repo.Record{
-		Id:          id,
-		Type:        request.Type,
-		CaesarShift: request.CaesarShift,
-		Result:      transform_result,
-		Updated_at:  time.Now().Unix(),
-	}
-	err = h.db.UpdateRecord(result)
+	result := repo.Record{}
+	result, err = h.db.GetRecord(id)
+	result.Type = request.Type
+	result.CaesarShift = request.CaesarShift
+	result.Result = transform_result
+	result.Updated_at = time.Now().Unix()
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		result.Id = id
 		result.Created_at = time.Now().Unix()
-		err = h.db.NewRecord(result)
+		err = h.db.NewRecord(&result)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
+	}
+	err = h.db.UpdateRecord(&result)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 
 	enc := json.NewEncoder(w)

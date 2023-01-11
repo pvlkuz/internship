@@ -60,8 +60,8 @@ func (db *RecordDB) GetRecords() ([]repo.Record, error) {
 }
 
 func (db *RecordDB) UpdateRecord(r *repo.Record) error {
-	err := db.Get(r, `UPDATE records SET transform_type = $1, caesar_shift = $2, result = $3, created_at = $4, updated_at = $5 WHERE id = $6 RETURNING *`,
-		r.Type, r.CaesarShift, r.Result, r.Created_at, r.Updated_at, r.Id)
+	err := db.Get(r, `UPDATE records SET transform_type = $1, caesar_shift = $2, result = $3, updated_at = $4 WHERE id = $5 RETURNING *`,
+		r.Type, r.CaesarShift, r.Result, r.Updated_at, r.Id)
 	if err != nil {
 		return err
 	}
