@@ -34,7 +34,7 @@ func NewRecordDB(db *sqlx.DB) *RecordDB {
 	}
 }
 func (db *RecordDB) NewRecord(r *repo.Record) error {
-	err := db.Get(r, `INSERT INTO records VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`, r.Id, r.Type, r.CaesarShift, r.Result, r.Created_at, r.Updated_at)
+	err := db.Get(r, `INSERT INTO records VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`, r.Id, r.Type, r.CaesarShift, r.Result, r.CreatedAt, r.UpdatedAt)
 	if err != nil {
 		return err
 	}
@@ -61,7 +61,7 @@ func (db *RecordDB) GetRecords() ([]repo.Record, error) {
 
 func (db *RecordDB) UpdateRecord(r *repo.Record) error {
 	err := db.Get(r, `UPDATE records SET transform_type = $1, caesar_shift = $2, result = $3, updated_at = $4 WHERE id = $5 RETURNING *`,
-		r.Type, r.CaesarShift, r.Result, r.Updated_at, r.Id)
+		r.Type, r.CaesarShift, r.Result, r.UpdatedAt, r.Id)
 	if err != nil {
 		return err
 	}

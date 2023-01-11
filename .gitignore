@@ -1,10 +1,5 @@
 .DS_Store
 .idea
-out.txt
-1.txt
-test.txt
-test1.txt
-test2.txt
 coverage.out
 bin/
 tests/

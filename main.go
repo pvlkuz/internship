@@ -2,8 +2,8 @@ package main
 
 import (
 	"log"
-	database "main/DataBase"
 	"main/crud_handler"
+	database "main/data-base"
 	"time"
 
 	"github.com/golang-migrate/migrate/v4"

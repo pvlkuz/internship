@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
-	database "main/DataBase"
+	database "main/data-base"
 	"main/repo"
 	"main/transformer"
 	"net/http"
@@ -37,11 +37,11 @@ func (h *Handler) RunServer() {
 	router := chi.NewRouter()
 	router.Use(SetJSONContentType)
 	router.Use(middleware.Logger)
-	router.Post("/records", h.HandlePost)
-	router.Get("/records", h.HandleGetAll)
-	router.Get("/records/{uuid}", h.HandleGet)
-	router.Delete("/records/{uuid}", h.HandleDelete)
-	router.Put("/records/{uuid}", h.HandlePut)
+	router.Post("/records", h.NewRecord)
+	router.Get("/records", h.GetAllRecords)
+	router.Get("/records/{id}", h.GetRecord)
+	router.Delete("/records/{id}", h.DeleteRecord)
+	router.Put("/records/{id}", h.UpdateRecord)
 	log.Fatal(http.ListenAndServe(":8080", router))
 }
 
@@ -65,7 +65,7 @@ func CheckValidRequest(request *TransformRequest) string {
 	return ""
 }
 
-func (h *Handler) HandlePost(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) NewRecord(w http.ResponseWriter, r *http.Request) {
 	request := new(TransformRequest)
 	dec := json.NewDecoder(r.Body)
 	err := dec.Decode(&request)
@@ -99,7 +99,7 @@ func (h *Handler) HandlePost(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Server Transformer error", http.StatusInternalServerError)
 		return
 	}
-	result.Created_at = time.Now().Unix()
+	result.CreatedAt = time.Now().Unix()
 
 	err = h.db.NewRecord(result)
 	if err != nil {
@@ -115,8 +115,8 @@ func (h *Handler) HandlePost(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (h *Handler) HandleDelete(w http.ResponseWriter, r *http.Request) {
-	id := chi.URLParam(r, "uuid")
+func (h *Handler) DeleteRecord(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
 	err := h.db.DeleteRecord(id)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -127,14 +127,14 @@ func (h *Handler) HandleDelete(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, "Deleted")
 }
 
-func (h *Handler) HandleGetAll(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) GetAllRecords(w http.ResponseWriter, r *http.Request) {
 	values, err := h.db.GetRecords()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 	sort.Slice(values, func(i, j int) bool {
-		return values[i].Created_at > values[j].Created_at
+		return values[i].CreatedAt > values[j].CreatedAt
 	})
 	enc := json.NewEncoder(w)
 	err = enc.Encode(values)
@@ -144,8 +144,8 @@ func (h *Handler) HandleGetAll(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (h *Handler) HandleGet(w http.ResponseWriter, r *http.Request) {
-	id := chi.URLParam(r, "uuid")
+func (h *Handler) GetRecord(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
 	result, err := h.db.GetRecord(id)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -160,8 +160,8 @@ func (h *Handler) HandleGet(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (h *Handler) HandlePut(w http.ResponseWriter, r *http.Request) {
-	id := chi.URLParam(r, "uuid")
+func (h *Handler) UpdateRecord(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
 	request := new(TransformRequest)
 	dec := json.NewDecoder(r.Body)
 	err := dec.Decode(&request)
@@ -195,10 +195,10 @@ func (h *Handler) HandlePut(w http.ResponseWriter, r *http.Request) {
 	result.Type = request.Type
 	result.CaesarShift = request.CaesarShift
 	result.Result = transform_result
-	result.Updated_at = time.Now().Unix()
+	result.UpdatedAt = time.Now().Unix()
 	if err != nil {
 		result.Id = id
-		result.Created_at = time.Now().Unix()
+		result.CreatedAt = time.Now().Unix()
 		err = h.db.NewRecord(&result)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)

@@ -7,8 +7,8 @@ type Record struct {
 	Type        string `db:"transform_type"`
 	CaesarShift int    `db:"caesar_shift"`
 	Result      string `db:"result"`
-	Created_at  int64  `db:"created_at"`
-	Updated_at  int64  `db:"updated_at"`
+	CreatedAt   int64  `db:"created_at"`
+	UpdatedAt   int64  `db:"updated_at"`
 }
 
 type RecordDB interface {
