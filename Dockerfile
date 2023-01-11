@@ -8,7 +8,6 @@ RUN go mod download
 
 COPY . .
 
-#RUN migrate -path ./ -database 'postgres://postgres:password@localhost:5432/postgres?sslmode=disable' up
 RUN go build -o ./bin/main
 
 EXPOSE 8080

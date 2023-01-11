@@ -12,7 +12,6 @@ services:
 
   myapp:
     build: .
-    #image: myapp
     restart: "no"
     depends_on:
       - db
