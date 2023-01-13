@@ -12,4 +12,5 @@ RUN go build -o ./bin/main
 
 EXPOSE 8080
 
-CMD [ "./bin/main" ]
+#CMD [ "./bin/main" ]
+ENTRYPOINT [ "./bin/main", "crud" ]

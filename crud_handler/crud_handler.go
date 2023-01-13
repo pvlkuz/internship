@@ -94,7 +94,7 @@ func (h *Handler) NewRecord(w http.ResponseWriter, r *http.Request) {
 	case request.Type == "base64":
 		tr = transformer.NewBase64Transformer()
 	}
-	result.Result, err = tr.Transform(strings.NewReader(request.Input))
+	result.Result, err = tr.Transform(strings.NewReader(request.Input), false)
 	if err != nil {
 		http.Error(w, "Server Transformer error", http.StatusInternalServerError)
 		return
@@ -184,7 +184,7 @@ func (h *Handler) UpdateRecord(w http.ResponseWriter, r *http.Request) {
 	case request.Type == "base64":
 		tr = transformer.NewBase64Transformer()
 	}
-	transform_result, err := tr.Transform(strings.NewReader(request.Input))
+	transform_result, err := tr.Transform(strings.NewReader(request.Input), false)
 	if err != nil {
 		http.Error(w, "Server Transformer error", http.StatusInternalServerError)
 		return
