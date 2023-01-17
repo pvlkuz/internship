@@ -190,8 +190,8 @@ func (h *Handler) UpdateRecord(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	result := repo.Record{}
-	result, err = h.db.GetRecord(id)
+	//result := repo.Record{}
+	result, err := h.db.GetRecord(id)
 	result.Type = request.Type
 	result.CaesarShift = request.CaesarShift
 	result.Result = transform_result

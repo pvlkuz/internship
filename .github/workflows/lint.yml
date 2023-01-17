@@ -1,0 +1,22 @@
+name: Lint Go Code
+
+on:
+  push:
+    branches:
+      - "review_branch"
+
+jobs:
+  lint:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-go@v2
+        with:
+          go-version: 1.19.3
+
+      - name: lint
+        run: |
+          curl -sSfl https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh
+          | sh -s -- -b $(go env GOPATH)/bin v1.50.1
+
+          golangci-lint run
