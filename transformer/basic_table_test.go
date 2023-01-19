@@ -2,7 +2,6 @@ package transformer
 
 import (
 	"bytes"
-	"errors"
 	"strings"
 	"testing"
 )
@@ -22,12 +21,6 @@ var TestArrayBasic = []TestBasic{
 	TestBasic{"za1", "ab", 1, false, true},
 	TestBasic{"12345", "54321", 0, false, false},
 	TestBasic{"123450", "54321", 0, false, true},
-}
-
-type errReader int
-
-func (errReader) Read(p []byte) (n int, err error) {
-	return 0, errors.New("test error")
 }
 
 func TestTableBasic(t *testing.T) {
