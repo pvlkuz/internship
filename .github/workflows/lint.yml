@@ -20,4 +20,4 @@ jobs:
 
           golangci-lint run
       - name: test
-        run: go test ./transformer
+        run: go test -coverprofile=coverage.out ./transformer
