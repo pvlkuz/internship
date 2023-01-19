@@ -41,7 +41,18 @@ func (h *Handler) RunServer() {
 	router.Get("/records/{id}", h.GetRecord)
 	router.Delete("/records/{id}", h.DeleteRecord)
 	router.Put("/records/{id}", h.UpdateRecord)
-	log.Fatal(http.ListenAndServe(":8080", router))
+
+	server := &http.Server{
+		Addr:              ":8080",
+		Handler:           router,
+		ReadHeaderTimeout: 3 * time.Second,
+	}
+	err := server.ListenAndServe()
+	if err != nil {
+		log.Fatal("server listenig error")
+	}
+
+	//log.Fatal(http.ListenAndServe(":8080", router))
 }
 
 func SetJSONContentType(h http.Handler) http.Handler {
