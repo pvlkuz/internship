@@ -1,4 +1,4 @@
-name: Lint and Test Go Code
+name: Test and Lint Go Code
 
 on:
   push:
@@ -18,6 +18,6 @@ jobs:
         run: |
           curl -sSfl https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.50.1
 
-          golangci-lint run
+          golangci-lint run --config=golangci-lint.yml
       - name: test
         run: go test -coverprofile=coverage.out ./transformer
