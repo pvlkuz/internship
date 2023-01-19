@@ -56,6 +56,12 @@ linters:
     - varcheck
     - deadcode
 
+    - revive
+    - stylecheck
+    - gosec
+    - goconst
+    - gocritic
+
 # all available settings of specific linters
 linters-settings:
   dupl:
@@ -70,5 +76,5 @@ linters-settings:
     disabled-linters:
       - "Help"
   cyclop:
-    max-complexity: 15
+    max-complexity: 17
     skip-tests: true
