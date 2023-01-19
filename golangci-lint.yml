@@ -69,9 +69,6 @@ linters-settings:
     threshold: 220
   misspell:
     locale: US
-  maligned:
-    # print struct with more effective memory layout or not, false by default
-    suggest-new: true
   promlinter:
     disabled-linters:
       - "Help"
