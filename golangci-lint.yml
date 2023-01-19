@@ -1,0 +1,74 @@
+name: Ci Lint
+
+on:
+  push:
+    branches:
+    - "review_branch"
+
+#jobs:
+#  lint:
+#    runs-on: macos-latest
+#    steps:
+#      - uses: actions/checkout@v2
+#      - uses: actions/setup-go@v2
+#        with:
+#          go-version: 1.19.3
+
+run:
+  # include test files or not, default is true
+  tests: false
+  skip-dirs:
+    - vendor
+
+linters:
+  enable-all: true
+  disable:
+    - nolintlint
+    - lll
+    - godox
+    - gci
+    - forbidigo
+    - wrapcheck
+    - tagliatelle
+    - nilerr
+    - ifshort
+    - gomnd
+    - goerr113
+    - gochecknoglobals
+    - testpackage
+    - exhaustivestruct
+    - errname
+    - interfacer
+    - scopelint
+    - golint
+    - nlreturn
+    - wsl
+    - gofumpt
+    - funlen
+    - varnamelen
+    - nilnil
+    - ireturn
+    - exhaustruct
+    - nonamedreturns
+    - nosnakecase
+    - interfacebloat
+    - structcheck
+    - varcheck
+    - deadcode
+
+# all available settings of specific linters
+linters-settings:
+  dupl:
+    # tokens count to trigger issue, 150 by default
+    threshold: 220
+  misspell:
+    locale: US
+  maligned:
+    # print struct with more effective memory layout or not, false by default
+    suggest-new: true
+  promlinter:
+    disabled-linters:
+      - "Help"
+  cyclop:
+    max-complexity: 15
+    skip-tests: true

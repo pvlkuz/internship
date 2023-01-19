@@ -3,7 +3,7 @@ package repo
 import "github.com/google/uuid"
 
 type Record struct {
-	Id          string `db:"id"`
+	ID          string `db:"id"`
 	Type        string `db:"transform_type"`
 	CaesarShift int    `db:"caesar_shift"`
 	Result      string `db:"result"`

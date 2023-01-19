@@ -22,13 +22,30 @@ type IoConfig struct {
 }
 
 func main() {
-
 	if len(os.Args) < 2 {
-		fmt.Println("expected subcommand")
+		fmt.Println("expected command, type help for details")
 		return
 	}
 
 	switch os.Args[1] {
+	default:
+		fmt.Println("type help for details")
+
+	case "help":
+		fmt.Println(" ")
+		fmt.Println("Usage:  ./bin/main COMMAND [OPTIONS]")
+		fmt.Println(" ")
+		fmt.Println("Commands:")
+		fmt.Println("	transform \t Transform string - reversing it if no other option provided (by default input from std.in and output to std.out)")
+		fmt.Println("	crud \t\t Start a server listening on port 8080, and connecting to db on port 5432 (use docker-compose to start app and database together)")
+		fmt.Println(" ")
+		fmt.Println("Options:")
+		fmt.Println("	-input \t\t Path to input file")
+		fmt.Println("	-output \t Path to output file")
+		fmt.Println("	-caesar \t Run Caesar cipher, provide shift number (different from 0)")
+		fmt.Println("	-base64 \t Run Base64 cipher")
+		fmt.Println(" ")
+
 	case "transform":
 		var in io.Reader
 		var out io.Writer
@@ -37,12 +54,10 @@ func main() {
 		var UseBase64, ioinput bool
 
 		cmd := flag.NewFlagSet("transform", flag.ExitOnError)
-		cmd.BoolVar(&config.StdIN, "input_stdin", true, "stnIN")
-		cmd.StringVar(&config.FileIn, "input", "default", "file input")
-		cmd.BoolVar(&config.StdOut, "output_std", true, "stdOUT")
-		cmd.StringVar(&config.FileOut, "output", "default", "file output")
-		cmd.IntVar(&CaesarShift, "caesar", 0, "caesar")
-		cmd.BoolVar(&UseBase64, "base64", false, "base64")
+		cmd.StringVar(&config.FileIn, "input", "default", "Path to file input")
+		cmd.StringVar(&config.FileOut, "output", "default", "Path to file output")
+		cmd.IntVar(&CaesarShift, "caesar", 0, "Run Caesar cipher with provided shift")
+		cmd.BoolVar(&UseBase64, "base64", false, "Run Base64 ")
 
 		err := cmd.Parse(os.Args[2:])
 		if err != nil {
@@ -73,7 +88,7 @@ func main() {
 
 		err = transformer.BasicTransform(in, out, CaesarShift, UseBase64, ioinput)
 		if err != nil {
-			log.Print(fmt.Errorf("error in transfroming: %w", err))
+			log.Print(fmt.Errorf("error in transforming: %w", err))
 			return
 		}
 	case "crud":
@@ -97,12 +112,8 @@ func main() {
 			if err != nil {
 				log.Fatalf("failed to initialize db: %s", err.Error())
 			}
-
 		}
-
 		handler := crud_handler.NewHandler(*db)
 		handler.RunServer()
-
 	}
-
 }

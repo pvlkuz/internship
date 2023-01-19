@@ -19,10 +19,9 @@ func NewCaesarTransformer(shift int) *CaesarTransformer {
 }
 
 func (t *CaesarTransformer) Transform(in io.Reader, ioinput bool) (string, error) {
-	var result string
 	f, err := io.ReadAll(in)
 	if err != nil {
-		return result, err
+		return "", err
 	}
 	if ioinput {
 		f = f[:len(f)-1]
@@ -30,15 +29,23 @@ func (t *CaesarTransformer) Transform(in io.Reader, ioinput bool) (string, error
 	rns := []rune(string(f))
 	for i := 0; i < len(rns); i++ {
 		r := int(rns[i]) + t.Shift
-		if r > 'z' {
+		switch {
+		case r > 'z':
+			rns[i] = rune(r - 26)
+		case r < 'a':
+			rns[i] = rune(r + 26)
+		default:
+			rns[i] = rune(r)
+		}
+		/*if r > 'z' {
 			rns[i] = rune(r - 26)
 		} else if r < 'a' {
 			rns[i] = rune(r + 26)
 		} else {
 			rns[i] = rune(r)
-		}
+		}*/
 	}
-	result = string(rns)
+	result := string(rns)
 
 	return result, nil
 }
@@ -50,10 +57,9 @@ func NewReverseTransformer() *ReverseTransformer {
 }
 
 func (t *ReverseTransformer) Transform(in io.Reader, ioinput bool) (string, error) {
-	var result string
 	f, err := io.ReadAll(in)
 	if err != nil {
-		return result, err
+		return "", err
 	}
 	if ioinput {
 		f = f[:len(f)-1]
@@ -62,7 +68,7 @@ func (t *ReverseTransformer) Transform(in io.Reader, ioinput bool) (string, erro
 	for i, j := 0, len(rns)-1; i < j; i, j = i+1, j-1 {
 		rns[i], rns[j] = rns[j], rns[i]
 	}
-	result = string(rns)
+	result := string(rns)
 	return result, nil
 }
 
@@ -73,31 +79,28 @@ func NewBase64Transformer() *Base64Transformer {
 }
 
 func (t *Base64Transformer) Transform(in io.Reader, ioinput bool) (string, error) {
-	var result string
 	f, err := io.ReadAll(in)
 	if err != nil {
-		return result, err
+		return "", err
 	}
 	if ioinput {
 		f = f[:len(f)-1]
 	}
-	result = base64.StdEncoding.EncodeToString(f)
+	result := base64.StdEncoding.EncodeToString(f)
 	return result, nil
 }
 
-func BasicTransform(in io.Reader, out io.Writer, CaesarShift int, Base64Use bool, ioinput bool) error {
-	var result string
-	var err error
+func BasicTransform(in io.Reader, out io.Writer, caesaarShift int, base64Use bool, ioinput bool) error {
 	var tr Transformer
 	switch {
-	case Base64Use:
+	case base64Use:
 		tr = NewBase64Transformer()
-	case CaesarShift != 0:
-		tr = NewCaesarTransformer(CaesarShift)
+	case caesaarShift != 0:
+		tr = NewCaesarTransformer(caesaarShift)
 	default:
 		tr = NewReverseTransformer()
 	}
-	result, err = tr.Transform(in, ioinput)
+	result, err := tr.Transform(in, ioinput)
 	if err != nil {
 		return fmt.Errorf("TRANSFORMER error: %w", err)
 	}
@@ -106,6 +109,5 @@ func BasicTransform(in io.Reader, out io.Writer, CaesarShift int, Base64Use bool
 	if err != nil {
 		return fmt.Errorf("write output error: %w", err)
 	}
-
 	return nil
 }

@@ -2,7 +2,6 @@ package crud_handler
 
 import (
 	"encoding/json"
-	"fmt"
 	"log"
 	database "main/data-base"
 	"main/repo"
@@ -79,10 +78,9 @@ func (h *Handler) NewRecord(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.WriteHeader(http.StatusCreated)
-	fmt.Fprint(w, "Created")
 
 	result := new(repo.Record)
-	result.Id = uuid.NewString()
+	result.ID = uuid.NewString()
 	result.Type = request.Type
 	result.CaesarShift = request.CaesarShift
 	var tr transformer.Transformer
@@ -124,7 +122,6 @@ func (h *Handler) DeleteRecord(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusNoContent)
-	fmt.Fprint(w, "Deleted")
 }
 
 func (h *Handler) GetAllRecords(w http.ResponseWriter, r *http.Request) {
@@ -190,14 +187,13 @@ func (h *Handler) UpdateRecord(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	//result := repo.Record{}
 	result, err := h.db.GetRecord(id)
 	result.Type = request.Type
 	result.CaesarShift = request.CaesarShift
 	result.Result = transform_result
 	result.UpdatedAt = time.Now().Unix()
 	if err != nil {
-		result.Id = id
+		result.ID = id
 		result.CreatedAt = time.Now().Unix()
 		err = h.db.NewRecord(&result)
 		if err != nil {
