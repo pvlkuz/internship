@@ -52,7 +52,6 @@ func (h *Handler) RunServer() {
 		log.Fatal("server listenig error")
 	}
 
-	//log.Fatal(http.ListenAndServe(":8080", router))
 }
 
 func SetJSONContentType(h http.Handler) http.Handler {
