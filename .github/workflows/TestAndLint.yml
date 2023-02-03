@@ -20,6 +20,6 @@ jobs:
 
           golangci-lint run --config=golangci-lint.yml
       - name: test-transformer
-        run: go test -coverprofile=coverage.out ./transformer
-      - name: test-crud
-        run: go test -coverprofile=coverage.out ./crud_handler
+        run: go test -coverprofile=coverage.out -v ./transformer
+      - name: test-crud-mocked
+        run: go test -coverprofile=coverage.out -v ./crud_handler
