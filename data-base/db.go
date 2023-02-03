@@ -7,8 +7,15 @@ import (
 	_ "github.com/lib/pq"
 )
 
-func NewDB() (*RecordDB, error) {
-	connStr := "postgresql://postgres:password@database:5432/postgres?sslmode=disable"
+const (
+	QueryCreate     = `INSERT INTO records VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`
+	QuerySingleRead = `SELECT * FROM records WHERE id = $1`
+	QueryMultiRead  = `SELECT * FROM records`
+	QueryUpdate     = `UPDATE records SET transform_type = $1, caesar_shift = $2, result = $3, updated_at = $4 WHERE id = $5 RETURNING *`
+	QueryDelete     = `DELETE FROM records WHERE id = $1`
+)
+
+func NewDB(connStr string) (*RecordDB, error) {
 	db, err := sqlx.Open("postgres", connStr)
 	if err != nil {
 		return nil, err
@@ -18,10 +25,7 @@ func NewDB() (*RecordDB, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	return &RecordDB{
-		DB: db,
-	}, nil
+	return &RecordDB{DB: db}, nil
 }
 
 type RecordDB struct {
@@ -34,7 +38,7 @@ func NewRecordDB(db *sqlx.DB) *RecordDB {
 	}
 }
 func (db *RecordDB) NewRecord(r *repo.Record) error {
-	err := db.Get(r, `INSERT INTO records VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`, r.ID, r.Type, r.CaesarShift, r.Result, r.CreatedAt, r.UpdatedAt)
+	err := db.Get(r, QueryCreate, r.ID, r.Type, r.CaesarShift, r.Result, r.CreatedAt, r.UpdatedAt)
 	if err != nil {
 		return err
 	}
@@ -43,7 +47,7 @@ func (db *RecordDB) NewRecord(r *repo.Record) error {
 
 func (db *RecordDB) GetRecord(id string) (repo.Record, error) {
 	var r repo.Record
-	err := db.Get(&r, `SELECT * FROM records WHERE id = $1`, id)
+	err := db.Get(&r, QuerySingleRead, id)
 	if err != nil {
 		return repo.Record{}, err
 	}
@@ -52,7 +56,7 @@ func (db *RecordDB) GetRecord(id string) (repo.Record, error) {
 
 func (db *RecordDB) GetRecords() ([]repo.Record, error) {
 	var r []repo.Record
-	err := db.Select(&r, `SELECT * FROM records`)
+	err := db.Select(&r, QueryMultiRead)
 	if err != nil {
 		return []repo.Record{}, err
 	}
@@ -60,8 +64,7 @@ func (db *RecordDB) GetRecords() ([]repo.Record, error) {
 }
 
 func (db *RecordDB) UpdateRecord(r *repo.Record) error {
-	err := db.Get(r, `UPDATE records SET transform_type = $1, caesar_shift = $2, result = $3, updated_at = $4 WHERE id = $5 RETURNING *`,
-		r.Type, r.CaesarShift, r.Result, r.UpdatedAt, r.ID)
+	err := db.Get(r, QueryUpdate, r.Type, r.CaesarShift, r.Result, r.UpdatedAt, r.ID)
 	if err != nil {
 		return err
 	}
@@ -69,7 +72,7 @@ func (db *RecordDB) UpdateRecord(r *repo.Record) error {
 }
 
 func (db *RecordDB) DeleteRecord(id string) error {
-	_, err := db.Exec(`DELETE FROM records WHERE id = $1`, id)
+	_, err := db.Exec(QueryDelete, id)
 	if err != nil {
 		return err
 	}

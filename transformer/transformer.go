@@ -37,13 +37,6 @@ func (t *CaesarTransformer) Transform(in io.Reader, ioinput bool) (string, error
 		default:
 			rns[i] = rune(r)
 		}
-		/*if r > 'z' {
-			rns[i] = rune(r - 26)
-		} else if r < 'a' {
-			rns[i] = rune(r + 26)
-		} else {
-			rns[i] = rune(r)
-		}*/
 	}
 	result := string(rns)
 

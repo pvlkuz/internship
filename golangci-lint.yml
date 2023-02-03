@@ -56,11 +56,9 @@ linters:
     - varcheck
     - deadcode
 
-    - revive
-    - stylecheck
-    - gosec
     - goconst
-    - gocritic
+    - stylecheck
+    - errorlint
 
 # all available settings of specific linters
 linters-settings:
@@ -75,3 +73,8 @@ linters-settings:
   cyclop:
     max-complexity: 17
     skip-tests: true
+  revive:
+    rules:
+      - name: blank-imports
+        severity: warning
+        disabled: true

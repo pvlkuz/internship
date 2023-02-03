@@ -21,6 +21,8 @@ type IoConfig struct {
 	FileIn, FileOut string
 }
 
+const connStr = "postgresql://postgres:password@database:5432/postgres?sslmode=disable"
+
 func main() {
 	if len(os.Args) < 2 {
 		fmt.Println("expected command, type help for details")
@@ -92,28 +94,32 @@ func main() {
 			return
 		}
 	case "crud":
-		m, err := migrate.New("file://./migration", "postgresql://postgres:password@database:5432/postgres?sslmode=disable")
+		m, err := migrate.New("file://./migration", connStr)
 		if err != nil {
 			time.Sleep(2 * time.Second)
-			m, err = migrate.New("file://./migration", "postgresql://postgres:password@database:5432/postgres?sslmode=disable")
+			m, err = migrate.New("file://./migration", connStr)
 			if err != nil {
-				log.Fatalf("failed to migration init: %s", err.Error())
+				log.Print(fmt.Errorf("failed to migration init: %s", err.Error()))
+				return
 			}
 		}
 		err = m.Up()
 		if err != nil {
-			log.Fatalf("failed to migrate up: %s", err.Error())
+			log.Print(fmt.Errorf("failed to migrate up: %s", err.Error()))
+			return
 		}
 
-		db, err := database.NewDB()
+		db, err := database.NewDB(connStr)
 		if err != nil {
 			time.Sleep(2 * time.Second)
-			db, err = database.NewDB()
+			db, err = database.NewDB(connStr)
 			if err != nil {
-				log.Fatalf("failed to initialize db: %s", err.Error())
+				// log.Fatalf("failed to initialize db: %s", err.Error())
+				log.Print(fmt.Errorf("failed to initialize db: %s", err.Error()))
+				return
 			}
 		}
-		handler := crud_handler.NewHandler(*db)
+		handler := crud_handler.NewHandler(db)
 		handler.RunServer()
 	}
 }

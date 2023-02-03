@@ -3,7 +3,6 @@ package crud_handler
 import (
 	"encoding/json"
 	"log"
-	database "main/data-base"
 	"main/repo"
 	"main/transformer"
 	"net/http"
@@ -17,10 +16,18 @@ import (
 )
 
 type Handler struct {
-	db database.RecordDB
+	db DBLayer
 }
 
-func NewHandler(db database.RecordDB) *Handler {
+type DBLayer interface {
+	NewRecord(r *repo.Record) error
+	GetRecord(id string) (repo.Record, error)
+	GetRecords() ([]repo.Record, error)
+	UpdateRecord(r *repo.Record) error
+	DeleteRecord(id string) error
+}
+
+func NewHandler(db DBLayer) *Handler {
 	return &Handler{
 		db: db,
 	}
@@ -51,7 +58,6 @@ func (h *Handler) RunServer() {
 	if err != nil {
 		log.Fatal("server listenig error")
 	}
-
 }
 
 func SetJSONContentType(h http.Handler) http.Handler {
@@ -153,6 +159,7 @@ func (h *Handler) GetAllRecords(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) GetRecord(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
+	// fmt.Printf("id = %s \n", id)
 	result, err := h.db.GetRecord(id)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)

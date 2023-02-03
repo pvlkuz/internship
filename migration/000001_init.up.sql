@@ -1,4 +1,6 @@
 
+CREATE EXTENSION "uuid-ossp";
+
 CREATE TABLE IF NOT EXISTS Records
 (
      id UUID PRIMARY KEY, 
