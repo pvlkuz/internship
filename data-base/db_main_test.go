@@ -11,13 +11,30 @@ import (
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 	"github.com/google/uuid"
 	_ "github.com/lib/pq"
+	"github.com/stretchr/testify/assert"
 )
 
 var db *RecordDB
+var records = []repo.Record{
+	{
+		ID:          uuid.NewString(),
+		Type:        "reverse",
+		CaesarShift: 0,
+		Result:      "321",
+		CreatedAt:   time.Now().Unix(),
+	},
+	{
+		ID:          uuid.NewString(),
+		Type:        "reverse",
+		CaesarShift: 0,
+		Result:      "54321",
+		CreatedAt:   time.Now().Unix(),
+	},
+}
 
 const connStr = "postgresql://postgres:password@localhost:5432/postgres?sslmode=disable"
 
-func Test_NewDB(t *testing.T) {
+func Test_NewTestDB(t *testing.T) {
 	var err error
 	db, err = NewDB(connStr)
 	if err != nil {
@@ -26,13 +43,6 @@ func Test_NewDB(t *testing.T) {
 }
 
 func Test_CRUD(t *testing.T) {
-	record := &repo.Record{
-		ID:          uuid.NewString(),
-		Type:        "reverse",
-		CaesarShift: 0,
-		Result:      "321",
-		CreatedAt:   time.Now().Unix(),
-	}
 
 	m, err := migrate.New("file://.././migration", connStr)
 	if err != nil {
@@ -43,51 +53,37 @@ func Test_CRUD(t *testing.T) {
 		log.Fatalf("failed to migrate up: %s", err.Error())
 	}
 
-	err = db.NewRecord(record)
-	//assert.Nil(t, err)
-	if err != nil {
-		t.Fatalf("error in creating new record")
-	}
-	_, err = db.GetRecord(record.ID)
-	if err != nil {
-		t.Fatalf("such record cant be read")
-	}
+	err = db.NewRecord(&records[0])
+	assert.Nil(t, err)
+	result, err := db.GetRecord(records[0].ID)
+	assert.Nil(t, err)
+	assert.Equal(t, records[0], result)
 
-	err = db.NewRecord(record)
-	record = &repo.Record{
-		ID:          uuid.NewString(),
-		Type:        record.Type,
-		CaesarShift: record.CaesarShift,
-		Result:      "54321",
-		CreatedAt:   record.CreatedAt,
-		UpdatedAt:   time.Now().Unix(),
-	}
-	err = db.NewRecord(record)
-	if err != nil {
-		t.Fatalf("error in creating new record")
-	}
-	_, err = db.GetRecords()
-	if err != nil {
-		t.Fatalf("multiple record cant be read")
-	}
+	err = db.NewRecord(&records[0])
+	err = db.NewRecord(&records[1])
+	assert.Nil(t, err)
+	results, err := db.GetRecords()
+	assert.Nil(t, err)
+	assert.Equal(t, records, results)
 
-	record = &repo.Record{
-		ID:          record.ID,
-		Type:        record.Type,
-		CaesarShift: record.CaesarShift,
+	record := repo.Record{
+		ID:          records[0].ID,
+		Type:        records[0].Type,
+		CaesarShift: records[0].CaesarShift,
 		Result:      "987654321",
-		CreatedAt:   record.CreatedAt,
+		CreatedAt:   records[0].CreatedAt,
 		UpdatedAt:   time.Now().Unix(),
 	}
-	err = db.UpdateRecord(record)
-	if err != nil {
-		t.Fatalf("such record cant be updated")
-	}
+	records = append(records, record)
+	err = db.UpdateRecord(&records[2])
+	assert.Nil(t, err)
+	result, err = db.GetRecord(records[2].ID)
+	assert.Equal(t, records[2], result)
 
-	err = db.DeleteRecord(record.ID)
-	if err != nil {
-		t.Fatalf("such record cant be deleted")
-	}
+	err = db.DeleteRecord(records[2].ID)
+	assert.Nil(t, err)
+	result, err = db.GetRecord(records[2].ID)
+	assert.NotNil(t, err)
 
 	err = m.Down()
 	if err != nil {

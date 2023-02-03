@@ -122,8 +122,6 @@ func Test_GetAllRecordsHandler(t *testing.T) {
 			rr.Code, http.StatusOK)
 	}
 
-	//t.Errorf("handler  body: %s", rr.Body.String())
-
 	res := []repo.Record{}
 	dec := json.NewDecoder(rr.Body)
 	err = dec.Decode(&res)
