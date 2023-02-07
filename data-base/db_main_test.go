@@ -32,7 +32,7 @@ var records = []repo.Record{
 	},
 }
 
-const connStr = "postgresql://postgres:password@localhost:5432/postgres?sslmode=disable"
+const connStr = "postgresql://postgres:password@databse:5432/postgres?sslmode=disable"
 
 func Test_NewTestDB(t *testing.T) {
 	var err error
