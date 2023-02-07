@@ -19,8 +19,6 @@ jobs:
           POSTGRES_DB: postgres
         ports: 
           - 5432:5432
-        links:
-          - "db:database"
         options: >-
           --health-cmd pg_isready
           --health-interval 10s
@@ -36,4 +34,6 @@ jobs:
         go-version: 1.19
 
     - name: Test
+      links: 
+        - "db:database"
       run: go test -coverprofile=coverage.out -v ./data-base
