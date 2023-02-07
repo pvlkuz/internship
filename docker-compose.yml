@@ -2,7 +2,7 @@ version: '3.1'
 
 services:
 
-  db:
+  database:
     image: postgres
     restart: always
     environment:
@@ -14,8 +14,6 @@ services:
     build: .
     restart: "no"
     depends_on:
-      - db
-    links:
-      - "db:database"
+      - database
     ports:
       - 8080:8080
