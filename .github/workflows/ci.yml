@@ -2,9 +2,9 @@ name: CI Tests for database
 
 on:
   push:
-    branches: [ "review_branch" ]
+    branches: [ "cache_implementation" ]
   pull_request:
-    branches: [ "review_branch" ]
+    branches: [ "cache_implementation" ]
 
 jobs:
 
