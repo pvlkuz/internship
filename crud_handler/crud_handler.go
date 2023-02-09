@@ -3,6 +3,7 @@ package crud_handler
 import (
 	"encoding/json"
 	"log"
+	"main/cache"
 	"main/repo"
 	"main/transformer"
 	"net/http"
@@ -16,7 +17,8 @@ import (
 )
 
 type Handler struct {
-	db DBLayer
+	db    DBLayer
+	cache cache.CacheInterface
 }
 
 type DBLayer interface {
@@ -27,9 +29,10 @@ type DBLayer interface {
 	DeleteRecord(id string) error
 }
 
-func NewHandler(db DBLayer) *Handler {
+func NewHandler(db DBLayer, cache cache.CacheInterface) *Handler {
 	return &Handler{
-		db: db,
+		db:    db,
+		cache: cache,
 	}
 }
 
@@ -160,18 +163,30 @@ func (h *Handler) GetAllRecords(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) GetRecord(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	// fmt.Printf("id = %s \n", id)
+
+	res := h.cache.Get(id)
+	if res != nil {
+		err := json.NewEncoder(w).Encode(res)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		return
+	}
+
 	result, err := h.db.GetRecord(id)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-
 	enc := json.NewEncoder(w)
 	err = enc.Encode(result)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+
+	h.cache.Set(&result)
 }
 
 func (h *Handler) UpdateRecord(w http.ResponseWriter, r *http.Request) {
@@ -205,6 +220,9 @@ func (h *Handler) UpdateRecord(w http.ResponseWriter, r *http.Request) {
 	}
 
 	result, err := h.db.GetRecord(id)
+	if err == nil {
+		h.cache.Delete(id)
+	}
 	result.Type = request.Type
 	result.CaesarShift = request.CaesarShift
 	result.Result = transform_result

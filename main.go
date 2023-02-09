@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"main/cache"
 	"main/crud_handler"
 	database "main/data-base"
 	"main/transformer"
@@ -119,7 +120,8 @@ func main() {
 				return
 			}
 		}
-		handler := crud_handler.NewHandler(db)
+		cache := cache.NewInMemoCache()
+		handler := crud_handler.NewHandler(db, cache)
 		handler.RunServer()
 	}
 }

@@ -74,7 +74,7 @@ var NewRecordResultTable = []string{
 
 func Test_NewRecordHandler(t *testing.T) {
 	db := new(MockDB)
-	h := NewHandler(db)
+	h := NewHandler(db, nil)
 
 	for i, test := range NewRecordRequestTable {
 		req, err := http.NewRequest("POST", "/records", strings.NewReader(fmt.Sprintf(`{"type":"%s", "input":"%s", "shift":%d}`, test.Type, test.Input, test.CaesarShift)))
@@ -108,7 +108,7 @@ var GetAllRecordsTestTable = []TransformRequest{
 
 func Test_GetAllRecordsHandler(t *testing.T) {
 	db := new(MockDB)
-	h := NewHandler(db)
+	h := NewHandler(db, nil)
 
 	req, err := http.NewRequest("GET", "/records", nil)
 	if err != nil {
@@ -137,7 +137,7 @@ func Test_GetAllRecordsHandler(t *testing.T) {
 
 func Test_GetRecordHandler(t *testing.T) {
 	db := new(MockDB)
-	h := NewHandler(db)
+	h := NewHandler(db, nil)
 
 	reverseTs := httptest.NewServer(http.HandlerFunc(h.GetRecord))
 	defer reverseTs.Close()
@@ -175,7 +175,7 @@ var UpdateRecordResultTable = []string{
 
 func Test_UpdateRecord(t *testing.T) {
 	db := new(MockDB)
-	h := NewHandler(db)
+	h := NewHandler(db, nil)
 
 	MyURL := fmt.Sprintf("http://localhost/records/%s", "1111")
 	for i, test := range UpdateRecordTestTable {
@@ -201,7 +201,7 @@ func Test_UpdateRecord(t *testing.T) {
 
 func Test_DeleteRecord(t *testing.T) {
 	db := new(MockDB)
-	h := NewHandler(db)
+	h := NewHandler(db, nil)
 
 	MyURL := fmt.Sprintf("http://localhost/records/%s", "1111")
 	req, err := http.NewRequest("DELETE", MyURL, nil)
