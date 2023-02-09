@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"main/cache"
 	"main/repo"
 	"net/http"
 	"net/http/httptest"
@@ -137,7 +138,8 @@ func Test_GetAllRecordsHandler(t *testing.T) {
 
 func Test_GetRecordHandler(t *testing.T) {
 	db := new(MockDB)
-	h := NewHandler(db, nil)
+	cache := cache.NewInMemoCache()
+	h := NewHandler(db, cache)
 
 	reverseTs := httptest.NewServer(http.HandlerFunc(h.GetRecord))
 	defer reverseTs.Close()
@@ -175,7 +177,8 @@ var UpdateRecordResultTable = []string{
 
 func Test_UpdateRecord(t *testing.T) {
 	db := new(MockDB)
-	h := NewHandler(db, nil)
+	cache := cache.NewInMemoCache()
+	h := NewHandler(db, cache)
 
 	MyURL := fmt.Sprintf("http://localhost/records/%s", "1111")
 	for i, test := range UpdateRecordTestTable {
