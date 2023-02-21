@@ -42,7 +42,7 @@ func Test_NewTestDB(t *testing.T) {
 	}
 }
 
-func Test_CRUD(t *testing.T) {
+func Test_Database(t *testing.T) {
 
 	m, err := migrate.New("file://.././migration", connStr)
 	if err != nil {

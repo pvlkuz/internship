@@ -8,6 +8,7 @@ import (
 
 	"main/cache"
 	"main/repo"
+	"main/service"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -75,7 +76,8 @@ var NewRecordResultTable = []string{
 
 func Test_NewRecordHandler(t *testing.T) {
 	db := new(MockDB)
-	h := NewHandler(db, nil)
+	service := service.NewService(db, nil)
+	h := NewHandler(service)
 
 	for i, test := range NewRecordRequestTable {
 		req, err := http.NewRequest("POST", "/records", strings.NewReader(fmt.Sprintf(`{"type":"%s", "input":"%s", "shift":%d}`, test.Type, test.Input, test.CaesarShift)))
@@ -109,7 +111,8 @@ var GetAllRecordsTestTable = []TransformRequest{
 
 func Test_GetAllRecordsHandler(t *testing.T) {
 	db := new(MockDB)
-	h := NewHandler(db, nil)
+	service := service.NewService(db, nil)
+	h := NewHandler(service)
 
 	req, err := http.NewRequest("GET", "/records", nil)
 	if err != nil {
@@ -139,7 +142,8 @@ func Test_GetAllRecordsHandler(t *testing.T) {
 func Test_GetRecordHandler(t *testing.T) {
 	db := new(MockDB)
 	cache := cache.NewInMemoCache()
-	h := NewHandler(db, cache)
+	service := service.NewService(db, cache)
+	h := NewHandler(service)
 
 	reverseTs := httptest.NewServer(http.HandlerFunc(h.GetRecord))
 	defer reverseTs.Close()
@@ -178,7 +182,8 @@ var UpdateRecordResultTable = []string{
 func Test_UpdateRecord(t *testing.T) {
 	db := new(MockDB)
 	cache := cache.NewInMemoCache()
-	h := NewHandler(db, cache)
+	service := service.NewService(db, cache)
+	h := NewHandler(service)
 
 	MyURL := fmt.Sprintf("http://localhost/records/%s", "1111")
 	for i, test := range UpdateRecordTestTable {
@@ -204,7 +209,9 @@ func Test_UpdateRecord(t *testing.T) {
 
 func Test_DeleteRecord(t *testing.T) {
 	db := new(MockDB)
-	h := NewHandler(db, nil)
+	cache := cache.NewInMemoCache()
+	service := service.NewService(db, cache)
+	h := NewHandler(service)
 
 	MyURL := fmt.Sprintf("http://localhost/records/%s", "1111")
 	req, err := http.NewRequest("DELETE", MyURL, nil)

@@ -3,22 +3,17 @@ package crud_handler
 import (
 	"encoding/json"
 	"log"
-	"main/cache"
 	"main/repo"
-	"main/transformer"
+	"main/service"
 	"net/http"
-	"sort"
-	"strings"
 	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
-	"github.com/google/uuid"
 )
 
 type Handler struct {
-	db    DBLayer
-	cache cache.CacheInterface
+	service service.ServiceInterface
 }
 
 type DBLayer interface {
@@ -29,10 +24,9 @@ type DBLayer interface {
 	DeleteRecord(id string) error
 }
 
-func NewHandler(db DBLayer, cache cache.CacheInterface) *Handler {
+func NewHandler(service service.ServiceInterface) *Handler {
 	return &Handler{
-		db:    db,
-		cache: cache,
+		service: service,
 	}
 }
 
@@ -97,33 +91,7 @@ func (h *Handler) NewRecord(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.WriteHeader(http.StatusCreated)
-
-	result := new(repo.Record)
-	result.ID = uuid.NewString()
-	result.Type = request.Type
-	result.CaesarShift = request.CaesarShift
-	var tr transformer.Transformer
-	switch {
-	case request.Type == "reverse":
-		tr = transformer.NewReverseTransformer()
-	case request.Type == "caesar":
-		tr = transformer.NewCaesarTransformer(request.CaesarShift)
-	case request.Type == "base64":
-		tr = transformer.NewBase64Transformer()
-	}
-	result.Result, err = tr.Transform(strings.NewReader(request.Input), false)
-	if err != nil {
-		http.Error(w, "Server Transformer error", http.StatusInternalServerError)
-		return
-	}
-	result.CreatedAt = time.Now().Unix()
-
-	err = h.db.NewRecord(result)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
+	result := h.service.NewRecord(service.TransformRequest(*request))
 	enc := json.NewEncoder(w)
 	err = enc.Encode(result)
 	if err != nil {
@@ -134,24 +102,20 @@ func (h *Handler) NewRecord(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) DeleteRecord(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
-	err := h.db.DeleteRecord(id)
+	err := h.service.DeleteRecord(id)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-
 	w.WriteHeader(http.StatusNoContent)
 }
 
 func (h *Handler) GetAllRecords(w http.ResponseWriter, r *http.Request) {
-	values, err := h.db.GetRecords()
+	values, err := h.service.GetRecords()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	sort.Slice(values, func(i, j int) bool {
-		return values[i].CreatedAt > values[j].CreatedAt
-	})
 	enc := json.NewEncoder(w)
 	err = enc.Encode(values)
 	if err != nil {
@@ -162,19 +126,7 @@ func (h *Handler) GetAllRecords(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) GetRecord(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
-	// fmt.Printf("id = %s \n", id)
-
-	res := h.cache.Get(id)
-	if res != nil {
-		err := json.NewEncoder(w).Encode(res)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		return
-	}
-
-	result, err := h.db.GetRecord(id)
+	result, err := h.service.GetRecord(id)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -185,8 +137,6 @@ func (h *Handler) GetRecord(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-
-	h.cache.Set(&result)
 }
 
 func (h *Handler) UpdateRecord(w http.ResponseWriter, r *http.Request) {
@@ -203,45 +153,7 @@ func (h *Handler) UpdateRecord(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, invalid, http.StatusBadRequest)
 		return
 	}
-
-	var tr transformer.Transformer
-	switch {
-	case request.Type == "reverse":
-		tr = transformer.NewReverseTransformer()
-	case request.Type == "caesar":
-		tr = transformer.NewCaesarTransformer(request.CaesarShift)
-	case request.Type == "base64":
-		tr = transformer.NewBase64Transformer()
-	}
-	transform_result, err := tr.Transform(strings.NewReader(request.Input), false)
-	if err != nil {
-		http.Error(w, "Server Transformer error", http.StatusInternalServerError)
-		return
-	}
-
-	result, err := h.db.GetRecord(id)
-	if err == nil {
-		h.cache.Delete(id)
-	}
-	result.Type = request.Type
-	result.CaesarShift = request.CaesarShift
-	result.Result = transform_result
-	result.UpdatedAt = time.Now().Unix()
-	if err != nil {
-		result.ID = id
-		result.CreatedAt = time.Now().Unix()
-		err = h.db.NewRecord(&result)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-	}
-	err = h.db.UpdateRecord(&result)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
+	result := h.service.UpdateRecord(id, service.TransformRequest(*request))
 	enc := json.NewEncoder(w)
 	err = enc.Encode(result)
 	if err != nil {

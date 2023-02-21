@@ -1,6 +1,7 @@
 package cache
 
 import (
+	"container/list"
 	"main/repo"
 	"sync"
 )
@@ -40,4 +41,60 @@ func (c *InMemoCache) Delete(key string) {
 	c.mu.Lock()
 	delete(c.cache, key)
 	c.mu.Unlock()
+}
+
+type LruCache struct {
+	capacity int
+	queue    *list.List
+	cache    map[string]*Item
+}
+
+type Item struct {
+	data *repo.Record
+	key  *list.Element
+}
+
+func NewLruCache(capacity int) *LruCache {
+	return &LruCache{
+		capacity: capacity,
+		queue:    list.New(),
+		cache:    make(map[string]*Item),
+	}
+}
+
+func (c *LruCache) Set(value *repo.Record) {
+	item, ok := c.cache[value.ID]
+	if !ok {
+		if c.capacity == len(c.cache) {
+			back := c.queue.Back()
+			c.queue.Remove(back)
+			delete(c.cache, back.Value.(string))
+		}
+
+		c.cache[value.ID] = &Item{
+			data: value,
+			key:  c.queue.PushFront(value.ID),
+		}
+	} else {
+		item.data = value
+		c.cache[value.ID] = item
+		c.queue.MoveToFront(item.key)
+	}
+}
+
+func (c *LruCache) Get(key string) *repo.Record {
+	item, ok := c.cache[key]
+	if ok {
+		c.queue.MoveToFront(item.key)
+		return item.data
+	}
+	return nil
+}
+
+func (c *LruCache) Delete(key string) {
+	item, ok := c.cache[key]
+	if ok {
+		c.queue.Remove(item.key)
+		delete(c.cache, key)
+	}
 }

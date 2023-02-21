@@ -8,6 +8,7 @@ import (
 	"main/cache"
 	"main/crud_handler"
 	database "main/data-base"
+	"main/service"
 	"main/transformer"
 	"os"
 	"time"
@@ -115,13 +116,13 @@ func main() {
 			time.Sleep(2 * time.Second)
 			db, err = database.NewDB(connStr)
 			if err != nil {
-				// log.Fatalf("failed to initialize db: %s", err.Error())
 				log.Print(fmt.Errorf("failed to initialize db: %s", err.Error()))
 				return
 			}
 		}
-		cache := cache.NewInMemoCache()
-		handler := crud_handler.NewHandler(db, cache)
+		cache := cache.NewLruCache(3)
+		service := service.NewService(db, cache)
+		handler := crud_handler.NewHandler(service)
 		handler.RunServer()
 	}
 }

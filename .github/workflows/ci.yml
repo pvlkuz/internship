@@ -9,7 +9,7 @@ on:
 jobs:
 
   TestForDatabase:
-    name: Test for database
+    name: Test for database (with service container)
     runs-on: ubuntu-latest
     services:
       database:
@@ -33,7 +33,7 @@ jobs:
       with:
         go-version: 1.19
 
-    - name: test-database
+    - name: Test-database
       run: go test -coverprofile=coverage.out -v ./data-base
 
   TestAndLint:
@@ -53,8 +53,17 @@ jobs:
 
           golangci-lint run --config=golangci-lint.yml
 
-      - name: test-transformer
+      - name: Test-transformer
         run: go test -coverprofile=coverage.out -v ./transformer
 
-      - name: test-crud-mocked
+      - name: Test-crud-mocked
         run: go test -coverprofile=coverage.out -v ./crud_handler
+
+      - name: Test-service
+        run: go test -coverprofile=coverage.out -v ./service
+
+      - name: Test-cache
+        run: go test -coverprofile=coverage.out -v ./cache
+
+      - name: Benchmark service with/without cache
+        run: go test -run=XXX -bench=. -benchmem ./service
