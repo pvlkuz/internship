@@ -36,6 +36,9 @@ jobs:
     - name: Test-database
       run: go test -coverprofile=coverage.out -v ./data-base
 
+    - name: Benchmark
+      run: go test -run=XXX -bench=. -benchmem ./service
+
   TestAndLint:
     name: Tests and Linters
     runs-on: macos-latest
@@ -64,6 +67,3 @@ jobs:
 
       - name: Test-cache
         run: go test -coverprofile=coverage.out -v ./cache
-
-      - name: Benchmark service with/without cache
-        run: go test -run=XXX -bench=. -benchmem ./service
