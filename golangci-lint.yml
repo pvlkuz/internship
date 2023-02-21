@@ -23,7 +23,7 @@ run:
 linters:
   enable-all: true
   disable:
-    - nolintlint
+    - goprintffuncname
     - lll
     - godox
     - gci
@@ -48,17 +48,13 @@ linters:
     - varnamelen
     - nilnil
     - ireturn
+    - sqlclosecheck
     - exhaustruct
     - nonamedreturns
+    - nosprintfhostport
     - nosnakecase
-    - interfacebloat
-    - structcheck
-    - varcheck
-    - deadcode
-
-    - goconst
-    - stylecheck
-    - errorlint
+    - godot
+    - nolintlint
 
 # all available settings of specific linters
 linters-settings:

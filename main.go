@@ -6,8 +6,8 @@ import (
 	"io"
 	"log"
 	"main/cache"
-	"main/crud_handler"
 	database "main/data-base"
+	"main/handler"
 	"main/service"
 	"main/transformer"
 	"os"
@@ -101,13 +101,13 @@ func main() {
 			time.Sleep(2 * time.Second)
 			m, err = migrate.New("file://./migration", connStr)
 			if err != nil {
-				log.Print(fmt.Errorf("failed to migration init: %s", err.Error()))
+				log.Print(fmt.Errorf("failed to migration init: %w", err))
 				return
 			}
 		}
 		err = m.Up()
 		if err != nil {
-			log.Print(fmt.Errorf("failed to migrate up: %s", err.Error()))
+			log.Print(fmt.Errorf("failed to migrate up: %w", err))
 			return
 		}
 
@@ -116,13 +116,13 @@ func main() {
 			time.Sleep(2 * time.Second)
 			db, err = database.NewDB(connStr)
 			if err != nil {
-				log.Print(fmt.Errorf("failed to initialize db: %s", err.Error()))
+				log.Print(fmt.Errorf("failed to initialize db: %w", err))
 				return
 			}
 		}
 		cache := cache.NewLruCache(3)
 		service := service.NewService(db, cache)
-		handler := crud_handler.NewHandler(service)
-		handler.RunServer()
+		myhandler := handler.NewHandler(service)
+		myhandler.RunServer()
 	}
 }

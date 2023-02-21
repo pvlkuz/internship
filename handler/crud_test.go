@@ -1,4 +1,4 @@
-package crud_handler
+package handler
 
 import (
 	"encoding/json"

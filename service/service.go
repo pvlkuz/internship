@@ -1,7 +1,6 @@
 package service
 
 import (
-	"fmt"
 	"main/repo"
 	"main/transformer"
 	"sort"
@@ -52,7 +51,6 @@ func NewService(db DBLayer, cache CacheInterface) service {
 }
 
 func (s service) NewRecord(request TransformRequest) *repo.Record {
-
 	result := new(repo.Record)
 	result.ID = uuid.NewString()
 	result.Type = request.Type
@@ -91,7 +89,6 @@ func (s service) DeleteRecord(id string) error {
 func (s service) GetRecords() ([]repo.Record, error) {
 	values, err := s.db.GetRecords()
 	if err != nil {
-		fmt.Errorf("service error getting all records")
 		return nil, err
 	}
 	sort.Slice(values, func(i, j int) bool {
@@ -108,7 +105,6 @@ func (s service) GetRecord(id string) (*repo.Record, error) {
 	}
 	result, err := s.db.GetRecord(id)
 	if err != nil {
-		fmt.Errorf("service error getting one record")
 		return nil, err
 	}
 	s.cache.Set(&result)
@@ -116,7 +112,6 @@ func (s service) GetRecord(id string) (*repo.Record, error) {
 }
 
 func (s service) UpdateRecord(id string, request TransformRequest) *repo.Record {
-
 	var tr transformer.Transformer
 	switch {
 	case request.Type == "reverse":
@@ -126,16 +121,15 @@ func (s service) UpdateRecord(id string, request TransformRequest) *repo.Record 
 	case request.Type == "base64":
 		tr = transformer.NewBase64Transformer()
 	}
-	transform_result, err := tr.Transform(strings.NewReader(request.Input), false)
+	TransformResult, err := tr.Transform(strings.NewReader(request.Input), false)
 	if err != nil {
-		fmt.Errorf("service error (updating) transforming")
 		return nil
 	}
 
 	result, err := s.db.GetRecord(id)
 	result.Type = request.Type
 	result.CaesarShift = request.CaesarShift
-	result.Result = transform_result
+	result.Result = TransformResult
 	result.UpdatedAt = time.Now().Unix()
 	if err != nil {
 		result.ID = id
@@ -143,13 +137,11 @@ func (s service) UpdateRecord(id string, request TransformRequest) *repo.Record 
 		result.CreatedAt = time.Now().Unix()
 		err = s.db.NewRecord(&result)
 		if err != nil {
-			fmt.Errorf("service error creating(update) record")
 			return nil
 		}
 	} else {
 		err = s.db.UpdateRecord(&result)
 		if err != nil {
-			fmt.Errorf("service error updating record")
 			return nil
 		}
 	}
