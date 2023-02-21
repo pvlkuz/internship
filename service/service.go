@@ -2,7 +2,6 @@ package service
 
 import (
 	"fmt"
-	"main/cache"
 	"main/repo"
 	"main/transformer"
 	"sort"
@@ -22,7 +21,7 @@ type ServiceInterface interface {
 
 type service struct {
 	db    DBLayer
-	cache cache.CacheInterface
+	cache CacheInterface
 }
 
 type DBLayer interface {
@@ -33,13 +32,19 @@ type DBLayer interface {
 	DeleteRecord(id string) error
 }
 
+type CacheInterface interface {
+	Set(value *repo.Record)
+	Get(key string) (*repo.Record, bool)
+	Delete(key string)
+}
+
 type TransformRequest struct {
 	Type        string `json:"type"`
 	CaesarShift int    `json:"shift,omitempty"`
 	Input       string `json:"input,omitempty"`
 }
 
-func NewService(db DBLayer, cache cache.CacheInterface) service {
+func NewService(db DBLayer, cache CacheInterface) service {
 	return service{
 		db:    db,
 		cache: cache,
@@ -64,14 +69,12 @@ func (s service) NewRecord(request TransformRequest) *repo.Record {
 	var err error
 	result.Result, err = tr.Transform(strings.NewReader(request.Input), false)
 	if err != nil {
-		fmt.Errorf("service error transforming")
 		return nil
 	}
 	result.CreatedAt = time.Now().Unix()
 
 	err = s.db.NewRecord(result)
 	if err != nil {
-		fmt.Errorf("service error creating new record")
 		return nil
 	}
 	return result
@@ -80,7 +83,6 @@ func (s service) NewRecord(request TransformRequest) *repo.Record {
 func (s service) DeleteRecord(id string) error {
 	err := s.db.DeleteRecord(id)
 	if err != nil {
-		fmt.Errorf("service error deleting record")
 		return err
 	}
 	return nil
@@ -100,8 +102,8 @@ func (s service) GetRecords() ([]repo.Record, error) {
 }
 
 func (s service) GetRecord(id string) (*repo.Record, error) {
-	res := s.cache.Get(id)
-	if res != nil {
+	res, ok := s.cache.Get(id)
+	if ok {
 		return res, nil
 	}
 	result, err := s.db.GetRecord(id)

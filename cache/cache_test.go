@@ -2,13 +2,14 @@ package cache
 
 import (
 	"main/repo"
+	"main/service"
 	"testing"
 	"time"
 
 	"github.com/google/uuid"
 )
 
-var cache CacheInterface
+var cache service.CacheInterface
 
 var records = []repo.Record{
 	{

@@ -154,6 +154,7 @@ func (h *Handler) UpdateRecord(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	result := h.service.UpdateRecord(id, service.TransformRequest(*request))
+
 	enc := json.NewEncoder(w)
 	err = enc.Encode(result)
 	if err != nil {

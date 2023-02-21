@@ -68,8 +68,8 @@ type MockCache struct {
 func (mock *MockCache) Set(value *repo.Record) {
 
 }
-func (mock *MockCache) Get(key string) *repo.Record {
-	return nil
+func (mock *MockCache) Get(key string) (*repo.Record, bool) {
+	return nil, false
 }
 func (mock *MockCache) Delete(key string) {
 

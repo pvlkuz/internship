@@ -1,15 +1,11 @@
 name: CI Tests for database
 
-on:
-  push:
-    branches: [ "cache_implementation" ]
-  pull_request:
-    branches: [ "cache_implementation" ]
+on: [push, pull_request]
 
 jobs:
 
   TestForDatabase:
-    name: Test for database (with service container)
+    name: Test and Benchmark (with db service container)
     runs-on: ubuntu-latest
     services:
       database:
@@ -37,7 +33,7 @@ jobs:
       run: go test -coverprofile=coverage.out -v ./data-base
 
     - name: Benchmark
-      run: go test -run=XXX -bench=. -benchmem ./service
+      run: go test -run=XXX -bench=. ./service
 
   TestAndLint:
     name: Tests and Linters

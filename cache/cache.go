@@ -6,12 +6,6 @@ import (
 	"sync"
 )
 
-type CacheInterface interface {
-	Set(value *repo.Record)
-	Get(key string) *repo.Record
-	Delete(key string)
-}
-
 type InMemoCache struct {
 	cache map[string]*repo.Record
 	mu    sync.Mutex
@@ -23,24 +17,24 @@ func NewInMemoCache() *InMemoCache {
 
 func (c *InMemoCache) Set(value *repo.Record) {
 	c.mu.Lock()
+	defer c.mu.Unlock()
 	c.cache[value.ID] = value
-	c.mu.Unlock()
 }
 
-func (c *InMemoCache) Get(key string) *repo.Record {
+func (c *InMemoCache) Get(key string) (*repo.Record, bool) {
 	c.mu.Lock()
+	defer c.mu.Unlock()
 	res, ok := c.cache[key]
-	c.mu.Unlock()
 	if !ok {
-		return nil
+		return nil, false
 	}
-	return res
+	return res, true
 }
 
 func (c *InMemoCache) Delete(key string) {
 	c.mu.Lock()
+	defer c.mu.Unlock()
 	delete(c.cache, key)
-	c.mu.Unlock()
 }
 
 type LruCache struct {
@@ -64,31 +58,32 @@ func NewLruCache(capacity int) *LruCache {
 
 func (c *LruCache) Set(value *repo.Record) {
 	item, ok := c.cache[value.ID]
-	if !ok {
+	if ok {
+		item.data = value
+		c.cache[value.ID] = item
+		c.queue.MoveToFront(item.key)
+	} else {
 		if c.capacity == len(c.cache) {
 			back := c.queue.Back()
 			c.queue.Remove(back)
-			delete(c.cache, back.Value.(string))
+			key, _ := back.Value.(string)
+			delete(c.cache, key)
 		}
 
 		c.cache[value.ID] = &Item{
 			data: value,
 			key:  c.queue.PushFront(value.ID),
 		}
-	} else {
-		item.data = value
-		c.cache[value.ID] = item
-		c.queue.MoveToFront(item.key)
 	}
 }
 
-func (c *LruCache) Get(key string) *repo.Record {
+func (c *LruCache) Get(key string) (*repo.Record, bool) {
 	item, ok := c.cache[key]
 	if ok {
 		c.queue.MoveToFront(item.key)
-		return item.data
+		return item.data, true
 	}
-	return nil
+	return nil, false
 }
 
 func (c *LruCache) Delete(key string) {
