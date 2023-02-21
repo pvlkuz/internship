@@ -1,6 +1,6 @@
 name: CI Tests for database
 
-on: [push, pull_request]
+on: [push]
 
 jobs:
 
@@ -56,7 +56,7 @@ jobs:
         run: go test -coverprofile=coverage.out -v ./transformer
 
       - name: Test-crud-mocked
-        run: go test -coverprofile=coverage.out -v ./crud_handler
+        run: go test -coverprofile=coverage.out -v ./handler
 
       - name: Test-service
         run: go test -coverprofile=coverage.out -v ./service
