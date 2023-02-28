@@ -75,3 +75,12 @@ func Test_InMemoCache(t *testing.T) {
 
 	cache.Delete(records[2].ID)
 }
+
+func Test_NewRedisCache(t *testing.T) {
+	cache = NewRedisCache()
+}
+
+func Test_RedisCache(t *testing.T) {
+	cache.Set(&records[0])
+	cache.Get(records[0].ID)
+}

@@ -3,6 +3,7 @@ package cache
 import (
 	"container/list"
 	"errors"
+	"fmt"
 	"main/repo"
 	"sync"
 	"time"
@@ -134,15 +135,18 @@ func (r *RedisCache) Set(value *repo.Record) {
 }
 
 func (r *RedisCache) Get(key string) (*repo.Record, bool) {
-	//nolint:exhaustivestruct, exhaustruct
-	result := repo.Record{}
+	result := repo.Record{} //nolint:exhaustivestruct, exhaustruct
+
+	get := r.client.Get(key)
+	fmt.Println(get.Bytes())
 
 	err := r.client.Get(key).Scan(result)
+	fmt.Println(err)
 	if errors.Is(err, redis.Nil) {
 		return nil, false
 	}
 
-	return &result, false
+	return &result, true
 }
 
 func (r *RedisCache) Delete(key string) {

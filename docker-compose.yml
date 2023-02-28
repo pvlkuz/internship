@@ -10,10 +10,18 @@ services:
     ports:
       - 5432:5432
 
+  redis:
+    image: redis
+    restart: always
+    ports:
+      - 6379:6379
+
   myapp:
     build: .
     restart: "no"
     depends_on:
       - database
+      - redis
     ports:
       - 8080:8080
+      - 6379:6379
