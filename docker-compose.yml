@@ -24,4 +24,3 @@ services:
       - redis
     ports:
       - 8080:8080
-      - 6379:6379
