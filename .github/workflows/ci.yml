@@ -55,7 +55,7 @@ jobs:
       - name: Test-transformer
         run: go test -coverprofile=coverage.out -v ./transformer
 
-      - name: Test-crud-mocked
+      - name: Test-handler
         run: go test -coverprofile=coverage.out -v ./handler
 
       - name: Test-service
