@@ -2,6 +2,7 @@ package cache
 
 import (
 	"container/list"
+	"errors"
 	"main/repo"
 	"sync"
 	"time"
@@ -119,13 +120,13 @@ type RedisCache struct {
 
 func NewRedisCache() *RedisCache {
 	return &RedisCache{
+		//nolint:exhaustivestruct, exhaustruct
 		client: redis.NewClient(&redis.Options{
 			Addr:     "localhost:6379",
 			Password: "", // no password set
 			DB:       0,  // use default DB
 		}),
 	}
-
 }
 
 func (r *RedisCache) Set(value *repo.Record) {
@@ -133,9 +134,11 @@ func (r *RedisCache) Set(value *repo.Record) {
 }
 
 func (r *RedisCache) Get(key string) (*repo.Record, bool) {
+	//nolint:exhaustivestruct, exhaustruct
 	result := repo.Record{}
+
 	err := r.client.Get(key).Scan(result)
-	if err == redis.Nil {
+	if errors.Is(err, redis.Nil) {
 		return nil, false
 	}
 
