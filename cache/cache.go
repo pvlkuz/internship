@@ -4,6 +4,9 @@ import (
 	"container/list"
 	"main/repo"
 	"sync"
+	"time"
+
+	"github.com/go-redis/redis"
 )
 
 type InMemoCache struct {
@@ -108,4 +111,37 @@ func (c *LruCache) Delete(key string) {
 		c.queue.Remove(item.key)
 		delete(c.cache, key)
 	}
+}
+
+type RedisCache struct {
+	client *redis.Client
+}
+
+func NewRedisCache() *RedisCache {
+	return &RedisCache{
+		client: redis.NewClient(&redis.Options{
+			Addr:     "localhost:6379",
+			Password: "", // no password set
+			DB:       0,  // use default DB
+		}),
+	}
+
+}
+
+func (r *RedisCache) Set(value *repo.Record) {
+	r.client.Set(value.ID, value, 15*time.Second)
+}
+
+func (r *RedisCache) Get(key string) (*repo.Record, bool) {
+	result := repo.Record{}
+	err := r.client.Get(key).Scan(result)
+	if err == redis.Nil {
+		return nil, false
+	}
+
+	return &result, false
+}
+
+func (r *RedisCache) Delete(key string) {
+
 }

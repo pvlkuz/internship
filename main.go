@@ -146,7 +146,9 @@ func main() {
 			}
 		}
 
-		cache := cache.NewLruCache(10)
+		// cache := new(MockCache)
+		// cache := cache.NewLruCache(10)
+		cache := cache.NewRedisCache()
 		service := service.NewService(db, cache)
 		myhandler := handler.NewHandler(service)
 		myhandler.RunServer()

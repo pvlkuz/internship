@@ -117,6 +117,11 @@ func (h *Handler) GetAllRecords(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if values == nil {
+		ResponseWithJSON(w, nil, nil, http.StatusNoContent)
+		return
+	}
+
 	ResponseWithJSON(w, nil, &values, http.StatusOK)
 }
 

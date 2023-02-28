@@ -153,7 +153,7 @@ func Benchmark_GetRecord(b *testing.B) {
 	}
 }
 
-func Benchmark_GetRecord_WithCache(b *testing.B) {
+func Benchmark_GetRecord_Cache(b *testing.B) {
 	m, err := migrate.New("file://.././migration", connStr)
 	if err != nil {
 		log.Fatalf("failed to migration init: %s", err.Error())
@@ -169,6 +169,42 @@ func Benchmark_GetRecord_WithCache(b *testing.B) {
 	}
 	testcache := cache.NewLruCache(10)
 	// testcache := cache.NewInMemoCache()
+	//testcache := new(MockCache)
+	s := NewService(db, testcache)
+	var ids [20]string
+	for i := 0; i < 20; i++ {
+		result := s.CreateRecord(NewRecordRequestTable[1])
+		ids[i] = result.ID
+	}
+
+	b.ResetTimer()
+
+	for i := 0; i < b.N; i++ {
+		s.GetRecord(ids[i%10])
+	}
+
+	err = m.Down()
+	if err != nil {
+		log.Fatalf("failed to migrate down: %s", err.Error())
+	}
+}
+
+func Benchmark_GetRecord_RedisCache(b *testing.B) {
+	m, err := migrate.New("file://.././migration", connStr)
+	if err != nil {
+		log.Fatalf("failed to migration init: %s", err.Error())
+	}
+	err = m.Up()
+	if err != nil {
+		log.Print(fmt.Errorf("failed to migrate up: %s", err.Error()))
+		return
+	}
+	db, err := database.NewDB(connStr)
+	if err != nil {
+		log.Fatalf("failed to initialize db: %s", err.Error())
+	}
+	// testcache := cache.NewLruCache(10)
+	testcache := cache.NewRedisCache()
 	//testcache := new(MockCache)
 	s := NewService(db, testcache)
 	var ids [20]string
