@@ -23,38 +23,12 @@ run:
 linters:
   enable-all: true
   disable:
-    - goprintffuncname
-    - lll
-    - godox
     - gci
-    - forbidigo
-    - wrapcheck
-    - tagliatelle
-    - nilerr
     - ifshort
     - gomnd
-    - goerr113
-    - gochecknoglobals
-    - testpackage
-    - exhaustivestruct
-    - errname
-    - interfacer
-    - scopelint
-    - golint
     - nlreturn
-    - wsl
     - gofumpt
-    - funlen
     - varnamelen
-    - nilnil
-    - ireturn
-    - sqlclosecheck
-    - exhaustruct
-    - nonamedreturns
-    - nosprintfhostport
-    - nosnakecase
-    - godot
-    - nolintlint
 
 # all available settings of specific linters
 linters-settings:
@@ -74,3 +48,8 @@ linters-settings:
       - name: blank-imports
         severity: warning
         disabled: true
+  lll:
+    line-length: 160
+  funlen:
+    statements: 50
+    lines: 75

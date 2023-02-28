@@ -25,8 +25,6 @@ type MockDB struct {
 }
 
 func (mock *MockDB) NewRecord(r *repo.Record) error {
-	// args := mock.Called()
-	// result :=args.Get(0)
 	return nil
 }
 func (mock *MockDB) GetRecord(id string) (repo.Record, error) {
@@ -39,7 +37,7 @@ func (mock *MockDB) GetRecord(id string) (repo.Record, error) {
 	}
 	return result, nil
 }
-func (mock *MockDB) GetRecords() ([]repo.Record, error) {
+func (mock *MockDB) GetAllRecords() ([]repo.Record, error) {
 	result := []repo.Record{
 		{
 			ID:          uuid.NewString(),
@@ -65,10 +63,10 @@ func (mock *MockDB) DeleteRecord(id string) error {
 	return nil
 }
 
-var NewRecordRequestTable = []TransformRequest{
-	TransformRequest{Type: "caesar", CaesarShift: -3, Input: "abc"},
-	TransformRequest{Type: "reverse", CaesarShift: 0, Input: "54321"},
-	TransformRequest{Type: "base64", CaesarShift: 0, Input: "Man"},
+var NewRecordRequestTable = []repo.TransformRequest{
+	repo.TransformRequest{Type: "caesar", CaesarShift: -3, Input: "abc"},
+	repo.TransformRequest{Type: "reverse", CaesarShift: 0, Input: "54321"},
+	repo.TransformRequest{Type: "base64", CaesarShift: 0, Input: "Man"},
 }
 var NewRecordResultTable = []string{
 	"xyz", "12345", "TWFu",
@@ -104,9 +102,9 @@ func Test_NewRecordHandler(t *testing.T) {
 	}
 }
 
-var GetAllRecordsTestTable = []TransformRequest{
-	TransformRequest{Type: "reverse", CaesarShift: 0, Input: "54321"},
-	TransformRequest{Type: "caesar", CaesarShift: -3, Input: "xyz"},
+var GetAllRecordsTestTable = []repo.TransformRequest{
+	repo.TransformRequest{Type: "reverse", CaesarShift: 0, Input: "54321"},
+	repo.TransformRequest{Type: "caesar", CaesarShift: -3, Input: "xyz"},
 }
 
 func Test_GetAllRecordsHandler(t *testing.T) {
@@ -170,10 +168,10 @@ func Test_GetRecordHandler(t *testing.T) {
 	assert.Equal(t, ExpectedResult, result)
 }
 
-var UpdateRecordTestTable = []TransformRequest{
-	TransformRequest{Type: "caesar", CaesarShift: -3, Input: "abc"},
-	TransformRequest{Type: "reverse", CaesarShift: 0, Input: "54321"},
-	TransformRequest{Type: "base64", CaesarShift: 0, Input: "Man"},
+var UpdateRecordTestTable = []repo.TransformRequest{
+	repo.TransformRequest{Type: "caesar", CaesarShift: -3, Input: "abc"},
+	repo.TransformRequest{Type: "reverse", CaesarShift: 0, Input: "54321"},
+	repo.TransformRequest{Type: "base64", CaesarShift: 0, Input: "Man"},
 }
 var UpdateRecordResultTable = []string{
 	"xyz", "12345", "TWFu",

@@ -62,7 +62,7 @@ func Test_Database(t *testing.T) {
 	err = db.NewRecord(&records[0])
 	err = db.NewRecord(&records[1])
 	assert.Nil(t, err)
-	results, err := db.GetRecords()
+	results, err := db.GetAllRecords()
 	assert.Nil(t, err)
 	assert.Equal(t, records, results)
 

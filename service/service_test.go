@@ -5,6 +5,7 @@ import (
 	"log"
 	"main/cache"
 	database "main/data-base"
+	"main/handler"
 	"main/repo"
 	"testing"
 	"time"
@@ -35,7 +36,7 @@ func (mock *MockDB) GetRecord(id string) (repo.Record, error) {
 	}
 	return result, nil
 }
-func (mock *MockDB) GetRecords() ([]repo.Record, error) {
+func (mock *MockDB) GetAllRecords() ([]repo.Record, error) {
 	result := []repo.Record{
 		{
 			ID:          uuid.NewString(),
@@ -75,16 +76,16 @@ func (mock *MockCache) Delete(key string) {
 
 }
 
-var TestService ServiceInterface
+var TestService handler.ServiceInterface
 
 func Test_NewService(t *testing.T) {
 	TestService = NewService(new(MockDB), new(MockCache))
 }
 
-var NewRecordRequestTable = []TransformRequest{
-	TransformRequest{Type: "caesar", CaesarShift: -3, Input: "abc"},
-	TransformRequest{Type: "reverse", CaesarShift: 0, Input: "54321"},
-	TransformRequest{Type: "base64", CaesarShift: 0, Input: "Man"},
+var NewRecordRequestTable = []repo.TransformRequest{
+	repo.TransformRequest{Type: "caesar", CaesarShift: -3, Input: "abc"},
+	repo.TransformRequest{Type: "reverse", CaesarShift: 0, Input: "54321"},
+	repo.TransformRequest{Type: "base64", CaesarShift: 0, Input: "Man"},
 }
 var NewRecordResultTable = []string{
 	"xyz", "12345", "TWFu",
@@ -92,7 +93,7 @@ var NewRecordResultTable = []string{
 
 func Test_NewRecord(t *testing.T) {
 	for _, test := range NewRecordRequestTable {
-		TestService.NewRecord(test)
+		TestService.CreateRecord(test)
 	}
 }
 
@@ -136,7 +137,7 @@ func Benchmark_GetRecord(b *testing.B) {
 	s := NewService(db, testcache)
 	var ids [20]string
 	for i := 0; i < 20; i++ {
-		result := s.NewRecord(NewRecordRequestTable[1])
+		result := s.CreateRecord(NewRecordRequestTable[1])
 		ids[i] = result.ID
 	}
 
@@ -172,7 +173,7 @@ func Benchmark_GetRecord_WithCache(b *testing.B) {
 	s := NewService(db, testcache)
 	var ids [20]string
 	for i := 0; i < 20; i++ {
-		result := s.NewRecord(NewRecordRequestTable[1])
+		result := s.CreateRecord(NewRecordRequestTable[1])
 		ids[i] = result.ID
 	}
 

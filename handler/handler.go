@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"log"
 	"main/repo"
-	"main/service"
 	"net/http"
 	"time"
 
@@ -12,8 +11,16 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 )
 
+type ServiceInterface interface {
+	CreateRecord(request repo.TransformRequest) *repo.Record
+	GetRecord(id string) (*repo.Record, error)
+	GetRecords() ([]repo.Record, error)
+	UpdateRecord(id string, request repo.TransformRequest) *repo.Record
+	DeleteRecord(id string) error
+}
+
 type Handler struct {
-	service service.ServiceInterface
+	service ServiceInterface
 }
 
 type DBLayer interface {
@@ -24,21 +31,14 @@ type DBLayer interface {
 	DeleteRecord(id string) error
 }
 
-func NewHandler(service service.ServiceInterface) *Handler {
+func NewHandler(service ServiceInterface) *Handler {
 	return &Handler{
 		service: service,
 	}
 }
 
-type TransformRequest struct {
-	Type        string `json:"type"`
-	CaesarShift int    `json:"shift,omitempty"`
-	Input       string `json:"input,omitempty"`
-}
-
 func (h *Handler) RunServer() {
 	router := chi.NewRouter()
-	router.Use(SetJSONContentType)
 	router.Use(middleware.Logger)
 	router.Post("/records", h.NewRecord)
 	router.Get("/records", h.GetAllRecords)
@@ -46,67 +46,67 @@ func (h *Handler) RunServer() {
 	router.Delete("/records/{id}", h.DeleteRecord)
 	router.Put("/records/{id}", h.UpdateRecord)
 
+	//nolint:exhaustivestruct, exhaustruct
 	server := &http.Server{
 		Addr:              ":8080",
 		Handler:           router,
 		ReadHeaderTimeout: 3 * time.Second,
 	}
+
 	err := server.ListenAndServe()
 	if err != nil {
 		log.Fatal("server listenig error")
 	}
 }
 
-func SetJSONContentType(h http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Add("Content-Type", "application/json")
-		h.ServeHTTP(w, r)
-	})
-}
+func ResponseWithJSON(w http.ResponseWriter, result *repo.Record, results *[]repo.Record, statusCode int) {
+	w.Header().Add("Content-Type", "application/json")
+	w.WriteHeader(statusCode)
 
-func CheckValidRequest(request *TransformRequest) string {
-	if request.Type != "reverse" && request.Type != "caesar" && request.Type != "base64" {
-		return "expected tranformation type field: reverse/caesar/base64"
+	var err error
+
+	if result != nil {
+		err = json.NewEncoder(w).Encode(result)
+	} else {
+		err = json.NewEncoder(w).Encode(results)
 	}
-	if request.Type == "caesar" && request.CaesarShift == 0 {
-		return "expected shift field (not 0)"
+
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
-	if request.Input == "" {
-		return "expected input field"
-	}
-	return ""
 }
 
 func (h *Handler) NewRecord(w http.ResponseWriter, r *http.Request) {
-	request := new(TransformRequest)
-	dec := json.NewDecoder(r.Body)
-	err := dec.Decode(&request)
+	request := new(repo.TransformRequest)
+
+	err := json.NewDecoder(r.Body).Decode(&request)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	invalid := CheckValidRequest(request)
-	if invalid != "" {
-		http.Error(w, invalid, http.StatusBadRequest)
-		return
-	}
-	w.WriteHeader(http.StatusCreated)
-	result := h.service.NewRecord(service.TransformRequest(*request))
-	enc := json.NewEncoder(w)
-	err = enc.Encode(result)
+
+	err = request.Validate()
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+
+	result := h.service.CreateRecord(*request)
+
+	ResponseWithJSON(w, result, nil, http.StatusCreated)
 }
 
 func (h *Handler) DeleteRecord(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
+
 	err := h.service.DeleteRecord(id)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+
+	w.Header().Add("Content-Type", "application/json")
 	w.WriteHeader(http.StatusNoContent)
 }
 
@@ -116,49 +116,39 @@ func (h *Handler) GetAllRecords(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	enc := json.NewEncoder(w)
-	err = enc.Encode(values)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
+
+	ResponseWithJSON(w, nil, &values, http.StatusOK)
 }
 
 func (h *Handler) GetRecord(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
+
 	result, err := h.service.GetRecord(id)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	enc := json.NewEncoder(w)
-	err = enc.Encode(result)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
+
+	ResponseWithJSON(w, result, nil, http.StatusOK)
 }
 
 func (h *Handler) UpdateRecord(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
-	request := new(TransformRequest)
-	dec := json.NewDecoder(r.Body)
-	err := dec.Decode(&request)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	invalid := CheckValidRequest(request)
-	if invalid != "" {
-		http.Error(w, invalid, http.StatusBadRequest)
-		return
-	}
-	result := h.service.UpdateRecord(id, service.TransformRequest(*request))
+	request := new(repo.TransformRequest)
 
-	enc := json.NewEncoder(w)
-	err = enc.Encode(result)
+	err := json.NewDecoder(r.Body).Decode(&request)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+
+	err = request.Validate()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	result := h.service.UpdateRecord(id, *request)
+
+	ResponseWithJSON(w, result, nil, http.StatusOK)
 }

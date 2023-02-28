@@ -2,9 +2,11 @@ package database
 
 import (
 	"main/repo"
+	"sort"
 
 	"github.com/jmoiron/sqlx"
-	_ "github.com/lib/pq"
+	_ "github.com/lib/pq" // DB driver
+	"github.com/pkg/errors"
 )
 
 const (
@@ -18,13 +20,14 @@ const (
 func NewDB(connStr string) (*RecordDB, error) {
 	db, err := sqlx.Open("postgres", connStr)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "error opening new DB connection")
 	}
 
 	err = db.Ping()
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "error checking DB connection")
 	}
+
 	return &RecordDB{DB: db}, nil
 }
 
@@ -39,42 +42,53 @@ func NewRecordDB(db *sqlx.DB) *RecordDB {
 }
 func (db *RecordDB) NewRecord(r *repo.Record) error {
 	err := db.Get(r, QueryCreate, r.ID, r.Type, r.CaesarShift, r.Result, r.CreatedAt, r.UpdatedAt)
-	if err != nil {
-		return err
-	}
-	return nil
+	// if err != nil {
+	// 	return err
+	// }
+
+	// return nil
+
+	return errors.Wrap(err, "error creating new record")
 }
 
 func (db *RecordDB) GetRecord(id string) (repo.Record, error) {
-	var r repo.Record
-	err := db.Get(&r, QuerySingleRead, id)
+	var result repo.Record
+
+	err := db.Get(&result, QuerySingleRead, id)
 	if err != nil {
-		return repo.Record{}, err
+		return repo.Record{}, errors.Wrap(err, "error reading one record")
 	}
-	return r, nil
+
+	return result, nil
 }
 
-func (db *RecordDB) GetRecords() ([]repo.Record, error) {
-	var r []repo.Record
-	err := db.Select(&r, QueryMultiRead)
-	if err != nil {
-		return []repo.Record{}, err
-	}
-	return r, err
+func (db *RecordDB) GetAllRecords() ([]repo.Record, error) {
+	var result []repo.Record
+	err := db.Select(&result, QueryMultiRead)
+	// if err != nil {
+	// 	return []repo.Record{}, err
+	// }
+	sort.Slice(result, func(i, j int) bool {
+		return result[i].CreatedAt > result[j].CreatedAt
+	})
+
+	return result, errors.Wrap(err, "error reading all records")
 }
 
 func (db *RecordDB) UpdateRecord(r *repo.Record) error {
 	err := db.Get(r, QueryUpdate, r.Type, r.CaesarShift, r.Result, r.UpdatedAt, r.ID)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "error updating record")
 	}
+
 	return nil
 }
 
 func (db *RecordDB) DeleteRecord(id string) error {
 	_, err := db.Exec(QueryDelete, id)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "error deleting record")
 	}
+
 	return nil
 }
