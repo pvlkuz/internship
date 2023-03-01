@@ -10,7 +10,7 @@ services:
     ports:
       - 5432:5432
 
-  redis:
+  redisCache:
     image: redis
     restart: always
     ports:
@@ -21,6 +21,6 @@ services:
     restart: "no"
     depends_on:
       - database
-      - redis
+      - redisCache
     ports:
       - 8080:8080

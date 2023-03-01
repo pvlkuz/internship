@@ -153,7 +153,7 @@ func Benchmark_GetRecord(b *testing.B) {
 	}
 }
 
-func Benchmark_GetRecord_Cache(b *testing.B) {
+func Benchmark_GetRecord_MyCache(b *testing.B) {
 	m, err := migrate.New("file://.././migration", connStr)
 	if err != nil {
 		log.Fatalf("failed to migration init: %s", err.Error())

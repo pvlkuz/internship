@@ -9,7 +9,7 @@ import (
 	"github.com/google/uuid"
 )
 
-var cache service.CacheInterface
+var testcache service.CacheInterface
 
 var records = []repo.Record{
 	{
@@ -43,44 +43,44 @@ var records = []repo.Record{
 }
 
 func Test_NewLruCache(t *testing.T) {
-	cache = NewLruCache(3)
+	testcache = NewLruCache(3)
 }
 
 func Test_LruCache(t *testing.T) {
-	cache.Set(&records[0])
-	cache.Set(&records[0])
+	testcache.Set(&records[0])
+	testcache.Set(&records[0])
 
-	cache.Set(&records[1])
-	cache.Set(&records[2])
-	cache.Set(&records[3])
+	testcache.Set(&records[1])
+	testcache.Set(&records[2])
+	testcache.Set(&records[3])
 
-	cache.Get(records[1].ID)
-	cache.Get(records[0].ID)
+	testcache.Get(records[1].ID)
+	testcache.Get(records[0].ID)
 
-	cache.Delete(records[3].ID)
+	testcache.Delete(records[3].ID)
 }
 
 func Test_NewInMemoCache(t *testing.T) {
-	cache = NewInMemoCache()
+	testcache = NewInMemoCache()
 }
 
 func Test_InMemoCache(t *testing.T) {
-	cache.Set(&records[0])
-	cache.Set(&records[1])
-	cache.Set(&records[2])
-	cache.Set(&records[3])
+	testcache.Set(&records[0])
+	testcache.Set(&records[1])
+	testcache.Set(&records[2])
+	testcache.Set(&records[3])
 
-	cache.Get(records[1].ID)
-	cache.Get(records[0].ID)
+	testcache.Get(records[1].ID)
+	testcache.Get(records[0].ID)
 
-	cache.Delete(records[2].ID)
+	testcache.Delete(records[2].ID)
 }
 
 func Test_NewRedisCache(t *testing.T) {
-	cache = NewRedisCache()
+	testcache = NewRedisCache()
 }
 
 func Test_RedisCache(t *testing.T) {
-	cache.Set(&records[0])
-	cache.Get(records[0].ID)
+	testcache.Set(&records[0])
+	testcache.Get(records[0].ID)
 }

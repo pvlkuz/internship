@@ -5,7 +5,7 @@ on: [push]
 jobs:
 
   TestForDatabase:
-    name: Test and Benchmark (with db service container)
+    name: Test and Benchmark (Db,Redis service containers)
     runs-on: ubuntu-latest
     services:
       database:
@@ -15,6 +15,15 @@ jobs:
           POSTGRES_DB: postgres
         ports: 
           - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redisCache:
+        image: redis
+        ports:
+          - 6379:6379
         options: >-
           --health-cmd pg_isready
           --health-interval 10s

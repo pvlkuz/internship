@@ -2,13 +2,13 @@ package cache
 
 import (
 	"container/list"
-	"errors"
-	"fmt"
+	"context"
 	"main/repo"
 	"sync"
 	"time"
 
-	"github.com/go-redis/redis"
+	"github.com/go-redis/cache/v8"
+	"github.com/go-redis/redis/v8"
 )
 
 type InMemoCache struct {
@@ -115,40 +115,46 @@ func (c *LruCache) Delete(key string) {
 	}
 }
 
-type RedisCache struct {
-	client *redis.Client
+type MyRedisCache struct {
+	cache *cache.Cache
 }
 
-func NewRedisCache() *RedisCache {
-	return &RedisCache{
-		//nolint:exhaustivestruct, exhaustruct
-		client: redis.NewClient(&redis.Options{
-			Addr:     "redis:6379",
-			Password: "", // no password set
-			DB:       0,  // use default DB
-		}),
+//nolint:exhaustivestruct, exhaustruct
+func NewRedisCache() *MyRedisCache {
+	redisClient := redis.NewClient(&redis.Options{
+		Addr: "redisCache:6379",
+	})
+
+	mycache := cache.New(&cache.Options{
+		Redis: redisClient,
+	})
+
+	return &MyRedisCache{
+		cache: mycache,
 	}
 }
 
-func (r *RedisCache) Set(value *repo.Record) {
-	r.client.Set(value.ID, value, 15*time.Second)
+func (r *MyRedisCache) Set(value *repo.Record) {
+	//nolint:exhaustivestruct, exhaustruct, errcheck
+	r.cache.Set(&cache.Item{
+		Ctx:   context.TODO(),
+		Key:   value.ID,
+		Value: value,
+		TTL:   20 * time.Second,
+	})
 }
 
-func (r *RedisCache) Get(key string) (*repo.Record, bool) {
+func (r *MyRedisCache) Get(key string) (*repo.Record, bool) {
 	result := repo.Record{} //nolint:exhaustivestruct, exhaustruct
 
-	get := r.client.Get(key)
-	fmt.Println(get.Bytes())
-
-	err := r.client.Get(key).Scan(result)
-	fmt.Println(err)
-	if errors.Is(err, redis.Nil) {
+	err := r.cache.Get(context.TODO(), key, &result)
+	if err != nil {
 		return nil, false
 	}
 
 	return &result, true
 }
 
-func (r *RedisCache) Delete(key string) {
+func (r *MyRedisCache) Delete(key string) {
 
 }
