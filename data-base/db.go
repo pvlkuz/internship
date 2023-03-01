@@ -1,12 +1,12 @@
 package database
 
 import (
+	"fmt"
 	"main/repo"
 	"sort"
 
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq" // DB driver
-	"github.com/pkg/errors"
 )
 
 const (
@@ -20,12 +20,12 @@ const (
 func NewDB(connStr string) (*RecordDB, error) {
 	db, err := sqlx.Open("postgres", connStr)
 	if err != nil {
-		return nil, errors.Wrap(err, "error opening new DB connection")
+		return nil, fmt.Errorf("error opening new DB connection: %w", err)
 	}
 
 	err = db.Ping()
 	if err != nil {
-		return nil, errors.Wrap(err, "error checking DB connection")
+		return nil, fmt.Errorf("error checking DB connection: %w", err)
 	}
 
 	return &RecordDB{DB: db}, nil
@@ -42,13 +42,12 @@ func NewRecordDB(db *sqlx.DB) *RecordDB {
 }
 func (db *RecordDB) NewRecord(r *repo.Record) error {
 	err := db.Get(r, QueryCreate, r.ID, r.Type, r.CaesarShift, r.Result, r.CreatedAt, r.UpdatedAt)
-	// if err != nil {
-	// 	return err
-	// }
 
-	// return nil
+	if err != nil {
+		return fmt.Errorf("error creating new record: %w", err)
+	}
 
-	return errors.Wrap(err, "error creating new record")
+	return nil
 }
 
 func (db *RecordDB) GetRecord(id string) (repo.Record, error) {
@@ -56,7 +55,7 @@ func (db *RecordDB) GetRecord(id string) (repo.Record, error) {
 
 	err := db.Get(&result, QuerySingleRead, id)
 	if err != nil {
-		return repo.Record{}, errors.Wrap(err, "error reading one record")
+		return repo.Record{}, fmt.Errorf("error reading one record: %w", err)
 	}
 
 	return result, nil
@@ -65,20 +64,22 @@ func (db *RecordDB) GetRecord(id string) (repo.Record, error) {
 func (db *RecordDB) GetAllRecords() ([]repo.Record, error) {
 	var result []repo.Record
 	err := db.Select(&result, QueryMultiRead)
-	// if err != nil {
-	// 	return []repo.Record{}, err
-	// }
+
 	sort.Slice(result, func(i, j int) bool {
 		return result[i].CreatedAt > result[j].CreatedAt
 	})
 
-	return result, errors.Wrap(err, "error reading all records")
+	if err != nil {
+		return result, fmt.Errorf("error reading all records: %w", err)
+	}
+
+	return result, nil
 }
 
 func (db *RecordDB) UpdateRecord(r *repo.Record) error {
 	err := db.Get(r, QueryUpdate, r.Type, r.CaesarShift, r.Result, r.UpdatedAt, r.ID)
 	if err != nil {
-		return errors.Wrap(err, "error updating record")
+		return fmt.Errorf("error updating record: %w", err)
 	}
 
 	return nil
@@ -87,7 +88,7 @@ func (db *RecordDB) UpdateRecord(r *repo.Record) error {
 func (db *RecordDB) DeleteRecord(id string) error {
 	_, err := db.Exec(QueryDelete, id)
 	if err != nil {
-		return errors.Wrap(err, "error deleting record")
+		return fmt.Errorf("error deleting record: %w", err)
 	}
 
 	return nil

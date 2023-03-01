@@ -1,21 +1,21 @@
 package service
 
 import (
+	"fmt"
 	"main/repo"
 	"main/transformer"
 	"strings"
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/pkg/errors"
 )
 
 type Service struct {
-	db    DBLayer
+	db    DB
 	cache CacheInterface
 }
 
-type DBLayer interface {
+type DB interface {
 	NewRecord(r *repo.Record) error
 	GetRecord(id string) (repo.Record, error)
 	GetAllRecords() ([]repo.Record, error)
@@ -29,14 +29,14 @@ type CacheInterface interface {
 	Delete(key string)
 }
 
-func NewService(db DBLayer, cache CacheInterface) Service {
+func NewService(db DB, cache CacheInterface) Service {
 	return Service{
 		db:    db,
 		cache: cache,
 	}
 }
 
-func (s Service) CreateRecord(request repo.TransformRequest) *repo.Record {
+func (s Service) CreateRecord(request repo.TransformRequest) (*repo.Record, error) {
 	var tr transformer.Transformer
 
 	switch {
@@ -50,7 +50,7 @@ func (s Service) CreateRecord(request repo.TransformRequest) *repo.Record {
 
 	res, err := tr.Transform(strings.NewReader(request.Input), false)
 	if err != nil {
-		return nil
+		return nil, fmt.Errorf("service error: %w", err)
 	}
 
 	result := &repo.Record{
@@ -64,17 +64,19 @@ func (s Service) CreateRecord(request repo.TransformRequest) *repo.Record {
 
 	err = s.db.NewRecord(result)
 	if err != nil {
-		return nil
+		return nil, fmt.Errorf("service error: %w", err)
 	}
 
-	return result
+	return result, nil
 }
 
 func (s Service) DeleteRecord(id string) error {
 	err := s.db.DeleteRecord(id)
 	if err != nil {
-		return errors.Wrap(err, "service error while deleting")
+		return fmt.Errorf("service error: %w", err)
 	}
+
+	s.cache.Delete(id)
 
 	return nil
 }
@@ -82,7 +84,7 @@ func (s Service) DeleteRecord(id string) error {
 func (s Service) GetRecords() ([]repo.Record, error) {
 	values, err := s.db.GetAllRecords()
 	if err != nil {
-		return nil, errors.Wrap(err, "service error while reading all records")
+		return nil, fmt.Errorf("service error: %w", err)
 	}
 
 	return values, nil
@@ -96,7 +98,7 @@ func (s Service) GetRecord(id string) (*repo.Record, error) {
 
 	result, err := s.db.GetRecord(id)
 	if err != nil {
-		return nil, errors.Wrap(err, "service error while reading one record")
+		return nil, fmt.Errorf("service error: %w", err)
 	}
 
 	s.cache.Set(&result)

@@ -11,8 +11,8 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 )
 
-type ServiceInterface interface {
-	CreateRecord(request repo.TransformRequest) *repo.Record
+type Service interface {
+	CreateRecord(request repo.TransformRequest) (*repo.Record, error)
 	GetRecord(id string) (*repo.Record, error)
 	GetRecords() ([]repo.Record, error)
 	UpdateRecord(id string, request repo.TransformRequest) *repo.Record
@@ -20,18 +20,10 @@ type ServiceInterface interface {
 }
 
 type Handler struct {
-	service ServiceInterface
+	service Service
 }
 
-type DBLayer interface {
-	NewRecord(r *repo.Record) error
-	GetRecord(id string) (repo.Record, error)
-	GetRecords() ([]repo.Record, error)
-	UpdateRecord(r *repo.Record) error
-	DeleteRecord(id string) error
-}
-
-func NewHandler(service ServiceInterface) *Handler {
+func NewHandler(service Service) *Handler {
 	return &Handler{
 		service: service,
 	}
@@ -59,17 +51,11 @@ func (h *Handler) RunServer() {
 	}
 }
 
-func ResponseWithJSON(w http.ResponseWriter, result *repo.Record, results *[]repo.Record, statusCode int) {
+func ResponseWithJSON(w http.ResponseWriter, statusCode int, record interface{}) {
 	w.Header().Add("Content-Type", "application/json")
 	w.WriteHeader(statusCode)
 
-	var err error
-
-	if result != nil {
-		err = json.NewEncoder(w).Encode(result)
-	} else {
-		err = json.NewEncoder(w).Encode(results)
-	}
+	err := json.NewEncoder(w).Encode(record)
 
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -78,7 +64,7 @@ func ResponseWithJSON(w http.ResponseWriter, result *repo.Record, results *[]rep
 }
 
 func (h *Handler) NewRecord(w http.ResponseWriter, r *http.Request) {
-	request := new(repo.TransformRequest)
+	var request *repo.TransformRequest
 
 	err := json.NewDecoder(r.Body).Decode(&request)
 	if err != nil {
@@ -88,13 +74,16 @@ func (h *Handler) NewRecord(w http.ResponseWriter, r *http.Request) {
 
 	err = request.Validate()
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		http.Error(w, err.Error(), http.StatusUnprocessableEntity)
 		return
 	}
 
-	result := h.service.CreateRecord(*request)
+	result, err := h.service.CreateRecord(*request)
+	if err != nil {
+		ResponseWithJSON(w, http.StatusInternalServerError, nil)
+	}
 
-	ResponseWithJSON(w, result, nil, http.StatusCreated)
+	ResponseWithJSON(w, http.StatusCreated, result)
 }
 
 func (h *Handler) DeleteRecord(w http.ResponseWriter, r *http.Request) {
@@ -117,7 +106,12 @@ func (h *Handler) GetAllRecords(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ResponseWithJSON(w, nil, &values, http.StatusOK)
+	if values == nil {
+		ResponseWithJSON(w, http.StatusNoContent, nil)
+		return
+	}
+
+	ResponseWithJSON(w, http.StatusOK, values)
 }
 
 func (h *Handler) GetRecord(w http.ResponseWriter, r *http.Request) {
@@ -129,7 +123,7 @@ func (h *Handler) GetRecord(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ResponseWithJSON(w, result, nil, http.StatusOK)
+	ResponseWithJSON(w, http.StatusOK, result)
 }
 
 func (h *Handler) UpdateRecord(w http.ResponseWriter, r *http.Request) {
@@ -150,5 +144,5 @@ func (h *Handler) UpdateRecord(w http.ResponseWriter, r *http.Request) {
 
 	result := h.service.UpdateRecord(id, *request)
 
-	ResponseWithJSON(w, result, nil, http.StatusOK)
+	ResponseWithJSON(w, http.StatusOK, result)
 }

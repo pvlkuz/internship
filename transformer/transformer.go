@@ -4,8 +4,6 @@ import (
 	"encoding/base64"
 	"fmt"
 	"io"
-
-	"github.com/pkg/errors"
 )
 
 type Transformer interface {
@@ -23,7 +21,7 @@ func NewCaesarTransformer(shift int) *CaesarTransformer {
 func (t *CaesarTransformer) Transform(in io.Reader, ioinput bool) (string, error) {
 	f, err := io.ReadAll(in)
 	if err != nil {
-		return "", errors.Wrap(err, "error in transforming(caesar)")
+		return "", fmt.Errorf("error in transforming(caesar): %w", err)
 	}
 
 	if ioinput {
@@ -59,7 +57,7 @@ func NewReverseTransformer() *ReverseTransformer {
 func (t *ReverseTransformer) Transform(in io.Reader, ioinput bool) (string, error) {
 	f, err := io.ReadAll(in)
 	if err != nil {
-		return "", errors.Wrap(err, "error in transforming(reverse)")
+		return "", fmt.Errorf("error in transforming(reverse): %w", err)
 	}
 
 	if ioinput {
@@ -86,7 +84,7 @@ func NewBase64Transformer() *Base64Transformer {
 func (t *Base64Transformer) Transform(in io.Reader, ioinput bool) (string, error) {
 	f, err := io.ReadAll(in)
 	if err != nil {
-		return "", errors.Wrap(err, "error in transforming(base64)")
+		return "", fmt.Errorf("error in transforming(base64): %w", err)
 	}
 
 	if ioinput {

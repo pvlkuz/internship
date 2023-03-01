@@ -90,13 +90,13 @@ func (c *LruCache) Get(key string) (*repo.Record, bool) {
 	defer c.mu.Unlock()
 
 	item, ok := c.cache[key]
-	if ok {
-		c.queue.MoveToFront(item.key)
-
-		return item.data, true
+	if !ok {
+		return nil, false
 	}
 
-	return nil, false
+	c.queue.MoveToFront(item.key)
+
+	return item.data, true
 }
 
 func (c *LruCache) Delete(key string) {

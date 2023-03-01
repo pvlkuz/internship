@@ -49,7 +49,7 @@ linters-settings:
         severity: warning
         disabled: true
   lll:
-    line-length: 160
+    line-length: 135
   funlen:
     statements: 50
     lines: 75

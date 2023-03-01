@@ -76,7 +76,7 @@ func (mock *MockCache) Delete(key string) {
 
 }
 
-var TestService handler.ServiceInterface
+var TestService handler.Service
 
 func Test_NewService(t *testing.T) {
 	TestService = NewService(new(MockDB), new(MockCache))
@@ -137,7 +137,7 @@ func Benchmark_GetRecord(b *testing.B) {
 	s := NewService(db, testcache)
 	var ids [20]string
 	for i := 0; i < 20; i++ {
-		result := s.CreateRecord(NewRecordRequestTable[1])
+		result, _ := s.CreateRecord(NewRecordRequestTable[1])
 		ids[i] = result.ID
 	}
 
@@ -173,7 +173,7 @@ func Benchmark_GetRecord_WithCache(b *testing.B) {
 	s := NewService(db, testcache)
 	var ids [20]string
 	for i := 0; i < 20; i++ {
-		result := s.CreateRecord(NewRecordRequestTable[1])
+		result, _ := s.CreateRecord(NewRecordRequestTable[1])
 		ids[i] = result.ID
 	}
 
