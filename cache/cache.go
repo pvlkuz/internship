@@ -120,9 +120,9 @@ type MyRedisCache struct {
 }
 
 //nolint:exhaustivestruct, exhaustruct
-func NewRedisCache() *MyRedisCache {
+func NewRedisCache(addres string) *MyRedisCache {
 	redisClient := redis.NewClient(&redis.Options{
-		Addr: "redisCache:6379",
+		Addr: addres,
 	})
 
 	mycache := cache.New(&cache.Options{

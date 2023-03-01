@@ -204,7 +204,7 @@ func Benchmark_GetRecord_RedisCache(b *testing.B) {
 		log.Fatalf("failed to initialize db: %s", err.Error())
 	}
 	// testcache := cache.NewLruCache(10)
-	testcache := cache.NewRedisCache()
+	testcache := cache.NewRedisCache("localhost:6379")
 	//testcache := new(MockCache)
 	s := NewService(db, testcache)
 	var ids [20]string

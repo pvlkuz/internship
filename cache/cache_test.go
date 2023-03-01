@@ -77,7 +77,7 @@ func Test_InMemoCache(t *testing.T) {
 }
 
 func Test_NewRedisCache(t *testing.T) {
-	testcache = NewRedisCache()
+	testcache = NewRedisCache("localhost:6379")
 }
 
 func Test_RedisCache(t *testing.T) {
