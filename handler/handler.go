@@ -14,7 +14,7 @@ import (
 type Service interface {
 	CreateRecord(request repo.TransformRequest) (*repo.Record, error)
 	GetRecord(id string) (*repo.Record, error)
-	GetRecords() ([]repo.Record, error)
+	GetAllRecords() ([]repo.Record, error)
 	UpdateRecord(id string, request repo.TransformRequest) *repo.Record
 	DeleteRecord(id string) error
 }
@@ -100,7 +100,7 @@ func (h *Handler) DeleteRecord(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) GetAllRecords(w http.ResponseWriter, r *http.Request) {
-	values, err := h.service.GetRecords()
+	values, err := h.service.GetAllRecords()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

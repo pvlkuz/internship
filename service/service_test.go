@@ -101,8 +101,8 @@ func Test_GetRecord(t *testing.T) {
 	TestService.GetRecord("123")
 }
 
-func Test_GetRecords(t *testing.T) {
-	TestService.GetRecords()
+func Test_GetAllRecords(t *testing.T) {
+	TestService.GetAllRecords()
 }
 
 func Test_UpdateRecord(t *testing.T) {

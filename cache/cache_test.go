@@ -9,7 +9,7 @@ import (
 	"github.com/google/uuid"
 )
 
-var cache service.CacheInterface
+var cache service.Cache
 
 var records = []repo.Record{
 	{

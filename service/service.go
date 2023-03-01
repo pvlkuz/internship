@@ -12,7 +12,7 @@ import (
 
 type Service struct {
 	db    DB
-	cache CacheInterface
+	cache Cache
 }
 
 type DB interface {
@@ -23,13 +23,13 @@ type DB interface {
 	DeleteRecord(id string) error
 }
 
-type CacheInterface interface {
+type Cache interface {
 	Set(value *repo.Record)
 	Get(key string) (*repo.Record, bool)
 	Delete(key string)
 }
 
-func NewService(db DB, cache CacheInterface) Service {
+func NewService(db DB, cache Cache) Service {
 	return Service{
 		db:    db,
 		cache: cache,
@@ -81,7 +81,7 @@ func (s Service) DeleteRecord(id string) error {
 	return nil
 }
 
-func (s Service) GetRecords() ([]repo.Record, error) {
+func (s Service) GetAllRecords() ([]repo.Record, error) {
 	values, err := s.db.GetAllRecords()
 	if err != nil {
 		return nil, fmt.Errorf("service error: %w", err)
