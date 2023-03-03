@@ -36,7 +36,7 @@ func NewService(db DB, cache Cache) Service {
 	}
 }
 
-func (s Service) CreateRecord(request models.TransformRequest) (*models.Record, error) {
+func SwitchAndTransform(request models.TransformRequest) (string, error) {
 	var tr transformer.Transformer
 
 	switch request.Type {
@@ -48,16 +48,25 @@ func (s Service) CreateRecord(request models.TransformRequest) (*models.Record, 
 		tr = transformer.NewBase64Transformer()
 	}
 
-	res, err := tr.Transform(strings.NewReader(request.Input), false)
+	TransformResult, err := tr.Transform(strings.NewReader(request.Input), false)
 	if err != nil {
-		return nil, fmt.Errorf("service error: %w", err)
+		return "", fmt.Errorf("service error: %w", err)
+	}
+
+	return TransformResult, nil
+}
+
+func (s Service) CreateRecord(request models.TransformRequest) (*models.Record, error) {
+	TransformResult, err := SwitchAndTransform(request)
+	if err != nil {
+		return nil, err
 	}
 
 	result := &models.Record{
 		ID:          uuid.NewString(),
 		Type:        request.Type,
 		CaesarShift: request.CaesarShift,
-		Result:      res,
+		Result:      TransformResult,
 		CreatedAt:   time.Now(),
 		UpdatedAt:   time.Time{},
 	}
@@ -111,18 +120,7 @@ func (s Service) GetRecord(id string) (*models.Record, error) {
 }
 
 func (s Service) UpdateRecord(id string, request models.TransformRequest) *models.Record {
-	var tr transformer.Transformer
-
-	switch request.Type {
-	case "reverse":
-		tr = transformer.NewReverseTransformer()
-	case "caesar":
-		tr = transformer.NewCaesarTransformer(request.CaesarShift)
-	case "base64":
-		tr = transformer.NewBase64Transformer()
-	}
-
-	TransformResult, err := tr.Transform(strings.NewReader(request.Input), false)
+	TransformResult, err := SwitchAndTransform(request)
 	if err != nil {
 		return nil
 	}

@@ -32,6 +32,7 @@ func NewHandler(service Service) *Handler {
 func (h *Handler) RunServer() error {
 	router := chi.NewRouter()
 	router.Use(middleware.Logger)
+	router.Use(middleware.Recoverer)
 	router.Post("/records", h.NewRecord)
 	router.Get("/records", h.GetAllRecords)
 	router.Get("/records/{id}", h.GetRecord)

@@ -6,7 +6,7 @@ import (
 	"main/cache"
 	database "main/data-base"
 	"main/handler"
-	"main/repo"
+	"main/models"
 	"testing"
 	"time"
 
@@ -21,11 +21,11 @@ type MockDB struct {
 	mock.Mock
 }
 
-func (mock *MockDB) CreateRecord(r *repo.Record) error {
+func (mock *MockDB) CreateRecord(r *models.Record) error {
 	return nil
 }
-func (mock *MockDB) GetRecord(id string) (repo.Record, error) {
-	result := repo.Record{
+func (mock *MockDB) GetRecord(id string) (models.Record, error) {
+	result := models.Record{
 		ID:          "1111",
 		Type:        "reverse",
 		CaesarShift: 0,
@@ -34,8 +34,8 @@ func (mock *MockDB) GetRecord(id string) (repo.Record, error) {
 	}
 	return result, nil
 }
-func (mock *MockDB) GetAllRecords() ([]repo.Record, error) {
-	result := []repo.Record{
+func (mock *MockDB) GetAllRecords() ([]models.Record, error) {
+	result := []models.Record{
 		{
 			ID:          uuid.NewString(),
 			Type:        "reverse",
@@ -53,7 +53,7 @@ func (mock *MockDB) GetAllRecords() ([]repo.Record, error) {
 	}
 	return result, nil
 }
-func (mock *MockDB) UpdateRecord(r *repo.Record) error {
+func (mock *MockDB) UpdateRecord(r *models.Record) error {
 	return nil
 }
 func (mock *MockDB) DeleteRecord(id string) error {
@@ -64,10 +64,10 @@ type MockCache struct {
 	mock.Mock
 }
 
-func (mock *MockCache) Set(value *repo.Record) {
+func (mock *MockCache) Set(value *models.Record) {
 
 }
-func (mock *MockCache) Get(key string) (*repo.Record, bool) {
+func (mock *MockCache) Get(key string) (*models.Record, bool) {
 	return nil, false
 }
 func (mock *MockCache) Delete(key string) {
@@ -80,10 +80,10 @@ func Test_NewService(t *testing.T) {
 	TestService = NewService(new(MockDB), new(MockCache))
 }
 
-var NewRecordRequestTable = []repo.TransformRequest{
-	repo.TransformRequest{Type: "caesar", CaesarShift: -3, Input: "abc"},
-	repo.TransformRequest{Type: "reverse", CaesarShift: 0, Input: "54321"},
-	repo.TransformRequest{Type: "base64", CaesarShift: 0, Input: "Man"},
+var NewRecordRequestTable = []models.TransformRequest{
+	models.TransformRequest{Type: "caesar", CaesarShift: -3, Input: "abc"},
+	models.TransformRequest{Type: "reverse", CaesarShift: 0, Input: "54321"},
+	models.TransformRequest{Type: "base64", CaesarShift: 0, Input: "Man"},
 }
 var NewRecordResultTable = []string{
 	"xyz", "12345", "TWFu",
