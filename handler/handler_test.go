@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"main/cache"
-	"main/repo"
+	"main/models"
 	"main/service"
 	"net/http"
 	"net/http/httptest"
@@ -20,53 +20,55 @@ import (
 
 const connStr = "postgresql://postgres:password@localhost:5432/postgres?sslmode=disable"
 
+var testTime = time.Now()
+
 type MockDB struct {
 	mock.Mock
 }
 
-func (mock *MockDB) NewRecord(r *repo.Record) error {
+func (mock *MockDB) CreateRecord(r *models.Record) error {
 	return nil
 }
-func (mock *MockDB) GetRecord(id string) (repo.Record, error) {
-	result := repo.Record{
+func (mock *MockDB) GetRecord(id string) (models.Record, error) {
+	result := models.Record{
 		ID:          "1111",
 		Type:        "reverse",
 		CaesarShift: 0,
 		Result:      "54321",
-		CreatedAt:   time.Now().Unix(),
+		CreatedAt:   testTime,
 	}
 	return result, nil
 }
-func (mock *MockDB) GetAllRecords() ([]repo.Record, error) {
-	result := []repo.Record{
+func (mock *MockDB) GetAllRecords() ([]models.Record, error) {
+	result := []models.Record{
 		{
 			ID:          uuid.NewString(),
 			Type:        "reverse",
 			CaesarShift: 0,
 			Result:      "54321",
-			CreatedAt:   time.Now().Unix(),
+			CreatedAt:   testTime,
 		},
 		{
 			ID:          uuid.NewString(),
 			Type:        "caesar",
 			CaesarShift: -3,
 			Result:      "xyz",
-			CreatedAt:   time.Now().Unix(),
+			CreatedAt:   testTime,
 		},
 	}
 	return result, nil
 }
-func (mock *MockDB) UpdateRecord(r *repo.Record) error {
+func (mock *MockDB) UpdateRecord(r *models.Record) error {
 	return nil
 }
 func (mock *MockDB) DeleteRecord(id string) error {
 	return nil
 }
 
-var NewRecordRequestTable = []repo.TransformRequest{
-	repo.TransformRequest{Type: "caesar", CaesarShift: -3, Input: "abc"},
-	repo.TransformRequest{Type: "reverse", CaesarShift: 0, Input: "54321"},
-	repo.TransformRequest{Type: "base64", CaesarShift: 0, Input: "Man"},
+var NewRecordRequestTable = []models.TransformRequest{
+	models.TransformRequest{Type: "caesar", CaesarShift: -3, Input: "abc"},
+	models.TransformRequest{Type: "reverse", CaesarShift: 0, Input: "54321"},
+	models.TransformRequest{Type: "base64", CaesarShift: 0, Input: "Man"},
 }
 var NewRecordResultTable = []string{
 	"xyz", "12345", "TWFu",
@@ -90,7 +92,7 @@ func Test_NewRecordHandler(t *testing.T) {
 				rr.Code, http.StatusCreated)
 		}
 
-		res := new(repo.Record)
+		res := new(models.Record)
 		dec := json.NewDecoder(rr.Body)
 		err = dec.Decode(&res)
 		if err != nil {
@@ -102,9 +104,9 @@ func Test_NewRecordHandler(t *testing.T) {
 	}
 }
 
-var GetAllRecordsTestTable = []repo.TransformRequest{
-	repo.TransformRequest{Type: "reverse", CaesarShift: 0, Input: "54321"},
-	repo.TransformRequest{Type: "caesar", CaesarShift: -3, Input: "xyz"},
+var GetAllRecordsTestTable = []models.TransformRequest{
+	models.TransformRequest{Type: "reverse", CaesarShift: 0, Input: "54321"},
+	models.TransformRequest{Type: "caesar", CaesarShift: -3, Input: "xyz"},
 }
 
 func Test_GetAllRecordsHandler(t *testing.T) {
@@ -124,7 +126,7 @@ func Test_GetAllRecordsHandler(t *testing.T) {
 			rr.Code, http.StatusOK)
 	}
 
-	res := []repo.Record{}
+	res := []models.Record{}
 	dec := json.NewDecoder(rr.Body)
 	err = dec.Decode(&res)
 	if err != nil {
@@ -152,26 +154,30 @@ func Test_GetRecordHandler(t *testing.T) {
 		t.Errorf("error in GetAll request")
 	}
 
-	result := repo.Record{}
+	result := models.Record{}
 	dec := json.NewDecoder(res.Body)
 	err = dec.Decode(&result)
 	if err != nil {
 		t.Errorf("decoding out array error")
 	}
-	ExpectedResult := repo.Record{
+	ExpectedResult := models.Record{
 		ID:          "1111",
 		Type:        "reverse",
 		CaesarShift: 0,
 		Result:      "54321",
-		CreatedAt:   time.Now().Unix(),
+		CreatedAt:   testTime,
 	}
-	assert.Equal(t, ExpectedResult, result)
+
+	assert.Equal(t, ExpectedResult.ID, result.ID)
+	assert.Equal(t, ExpectedResult.Type, result.Type)
+	assert.Equal(t, ExpectedResult.CaesarShift, result.CaesarShift)
+	assert.Equal(t, ExpectedResult.Result, result.Result)
 }
 
-var UpdateRecordTestTable = []repo.TransformRequest{
-	repo.TransformRequest{Type: "caesar", CaesarShift: -3, Input: "abc"},
-	repo.TransformRequest{Type: "reverse", CaesarShift: 0, Input: "54321"},
-	repo.TransformRequest{Type: "base64", CaesarShift: 0, Input: "Man"},
+var UpdateRecordTestTable = []models.TransformRequest{
+	models.TransformRequest{Type: "caesar", CaesarShift: -3, Input: "abc"},
+	models.TransformRequest{Type: "reverse", CaesarShift: 0, Input: "54321"},
+	models.TransformRequest{Type: "base64", CaesarShift: 0, Input: "Man"},
 }
 var UpdateRecordResultTable = []string{
 	"xyz", "12345", "TWFu",
@@ -193,7 +199,7 @@ func Test_UpdateRecord(t *testing.T) {
 		handler := http.HandlerFunc(h.UpdateRecord)
 		handler.ServeHTTP(rr, req)
 
-		res := new(repo.Record)
+		res := new(models.Record)
 		dec := json.NewDecoder(rr.Body)
 		err = dec.Decode(&res)
 		if err != nil {

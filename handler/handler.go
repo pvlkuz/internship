@@ -2,8 +2,8 @@ package handler
 
 import (
 	"encoding/json"
-	"log"
-	"main/repo"
+	"fmt"
+	"main/models"
 	"net/http"
 	"time"
 
@@ -12,10 +12,10 @@ import (
 )
 
 type Service interface {
-	CreateRecord(request repo.TransformRequest) (*repo.Record, error)
-	GetRecord(id string) (*repo.Record, error)
-	GetAllRecords() ([]repo.Record, error)
-	UpdateRecord(id string, request repo.TransformRequest) *repo.Record
+	CreateRecord(request models.TransformRequest) (*models.Record, error)
+	GetRecord(id string) (*models.Record, error)
+	GetAllRecords() ([]models.Record, error)
+	UpdateRecord(id string, request models.TransformRequest) *models.Record
 	DeleteRecord(id string) error
 }
 
@@ -29,7 +29,7 @@ func NewHandler(service Service) *Handler {
 	}
 }
 
-func (h *Handler) RunServer() {
+func (h *Handler) RunServer() error {
 	router := chi.NewRouter()
 	router.Use(middleware.Logger)
 	router.Post("/records", h.NewRecord)
@@ -38,7 +38,6 @@ func (h *Handler) RunServer() {
 	router.Delete("/records/{id}", h.DeleteRecord)
 	router.Put("/records/{id}", h.UpdateRecord)
 
-	//nolint:exhaustivestruct, exhaustruct
 	server := &http.Server{
 		Addr:              ":8080",
 		Handler:           router,
@@ -47,8 +46,10 @@ func (h *Handler) RunServer() {
 
 	err := server.ListenAndServe()
 	if err != nil {
-		log.Fatal("server listenig error")
+		return fmt.Errorf("server listenig error: %w", err)
 	}
+
+	return nil
 }
 
 func ResponseWithJSON(w http.ResponseWriter, statusCode int, record interface{}) {
@@ -64,11 +65,11 @@ func ResponseWithJSON(w http.ResponseWriter, statusCode int, record interface{})
 }
 
 func (h *Handler) NewRecord(w http.ResponseWriter, r *http.Request) {
-	var request *repo.TransformRequest
+	var request *models.TransformRequest
 
 	err := json.NewDecoder(r.Body).Decode(&request)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
@@ -106,11 +107,6 @@ func (h *Handler) GetAllRecords(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if values == nil {
-		ResponseWithJSON(w, http.StatusNoContent, nil)
-		return
-	}
-
 	ResponseWithJSON(w, http.StatusOK, values)
 }
 
@@ -119,7 +115,7 @@ func (h *Handler) GetRecord(w http.ResponseWriter, r *http.Request) {
 
 	result, err := h.service.GetRecord(id)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -128,17 +124,17 @@ func (h *Handler) GetRecord(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) UpdateRecord(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
-	request := new(repo.TransformRequest)
+	request := new(models.TransformRequest)
 
 	err := json.NewDecoder(r.Body).Decode(&request)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
 	err = request.Validate()
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		http.Error(w, err.Error(), http.StatusUnprocessableEntity)
 		return
 	}
 

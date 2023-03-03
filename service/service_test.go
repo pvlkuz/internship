@@ -21,9 +21,7 @@ type MockDB struct {
 	mock.Mock
 }
 
-func (mock *MockDB) NewRecord(r *repo.Record) error {
-	// args := mock.Called()
-	// result :=args.Get(0)
+func (mock *MockDB) CreateRecord(r *repo.Record) error {
 	return nil
 }
 func (mock *MockDB) GetRecord(id string) (repo.Record, error) {
@@ -32,7 +30,7 @@ func (mock *MockDB) GetRecord(id string) (repo.Record, error) {
 		Type:        "reverse",
 		CaesarShift: 0,
 		Result:      "54321",
-		CreatedAt:   time.Now().Unix(),
+		CreatedAt:   time.Now(),
 	}
 	return result, nil
 }
@@ -43,14 +41,14 @@ func (mock *MockDB) GetAllRecords() ([]repo.Record, error) {
 			Type:        "reverse",
 			CaesarShift: 0,
 			Result:      "54321",
-			CreatedAt:   time.Now().Unix(),
+			CreatedAt:   time.Now(),
 		},
 		{
 			ID:          uuid.NewString(),
 			Type:        "caesar",
 			CaesarShift: -3,
 			Result:      "xyz",
-			CreatedAt:   time.Now().Unix(),
+			CreatedAt:   time.Now(),
 		},
 	}
 	return result, nil
@@ -131,8 +129,7 @@ func Benchmark_GetRecord(b *testing.B) {
 	if err != nil {
 		log.Fatalf("failed to initialize db: %s", err.Error())
 	}
-	//testcache := cache.NewLruCache(10)
-	// testcache := cache.NewInMemoCache()
+
 	testcache := new(MockCache)
 	s := NewService(db, testcache)
 	var ids [20]string
@@ -167,9 +164,8 @@ func Benchmark_GetRecord_WithCache(b *testing.B) {
 	if err != nil {
 		log.Fatalf("failed to initialize db: %s", err.Error())
 	}
+
 	testcache := cache.NewLruCache(10)
-	// testcache := cache.NewInMemoCache()
-	//testcache := new(MockCache)
 	s := NewService(db, testcache)
 	var ids [20]string
 	for i := 0; i < 20; i++ {

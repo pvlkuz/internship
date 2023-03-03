@@ -2,7 +2,7 @@ package service
 
 import (
 	"fmt"
-	"main/repo"
+	"main/models"
 	"main/transformer"
 	"strings"
 	"time"
@@ -16,16 +16,16 @@ type Service struct {
 }
 
 type DB interface {
-	NewRecord(r *repo.Record) error
-	GetRecord(id string) (repo.Record, error)
-	GetAllRecords() ([]repo.Record, error)
-	UpdateRecord(r *repo.Record) error
+	CreateRecord(r *models.Record) error
+	GetRecord(id string) (models.Record, error)
+	GetAllRecords() ([]models.Record, error)
+	UpdateRecord(r *models.Record) error
 	DeleteRecord(id string) error
 }
 
 type Cache interface {
-	Set(value *repo.Record)
-	Get(key string) (*repo.Record, bool)
+	Set(value *models.Record)
+	Get(key string) (*models.Record, bool)
 	Delete(key string)
 }
 
@@ -36,15 +36,15 @@ func NewService(db DB, cache Cache) Service {
 	}
 }
 
-func (s Service) CreateRecord(request repo.TransformRequest) (*repo.Record, error) {
+func (s Service) CreateRecord(request models.TransformRequest) (*models.Record, error) {
 	var tr transformer.Transformer
 
-	switch {
-	case request.Type == "reverse":
+	switch request.Type {
+	case "reverse":
 		tr = transformer.NewReverseTransformer()
-	case request.Type == "caesar":
+	case "caesar":
 		tr = transformer.NewCaesarTransformer(request.CaesarShift)
-	case request.Type == "base64":
+	case "base64":
 		tr = transformer.NewBase64Transformer()
 	}
 
@@ -53,16 +53,16 @@ func (s Service) CreateRecord(request repo.TransformRequest) (*repo.Record, erro
 		return nil, fmt.Errorf("service error: %w", err)
 	}
 
-	result := &repo.Record{
+	result := &models.Record{
 		ID:          uuid.NewString(),
 		Type:        request.Type,
 		CaesarShift: request.CaesarShift,
 		Result:      res,
-		CreatedAt:   time.Now().Unix(),
-		UpdatedAt:   0,
+		CreatedAt:   time.Now(),
+		UpdatedAt:   time.Time{},
 	}
 
-	err = s.db.NewRecord(result)
+	err = s.db.CreateRecord(result)
 	if err != nil {
 		return nil, fmt.Errorf("service error: %w", err)
 	}
@@ -81,7 +81,7 @@ func (s Service) DeleteRecord(id string) error {
 	return nil
 }
 
-func (s Service) GetAllRecords() ([]repo.Record, error) {
+func (s Service) GetAllRecords() ([]models.Record, error) {
 	values, err := s.db.GetAllRecords()
 	if err != nil {
 		return nil, fmt.Errorf("service error: %w", err)
@@ -90,7 +90,7 @@ func (s Service) GetAllRecords() ([]repo.Record, error) {
 	return values, nil
 }
 
-func (s Service) GetRecord(id string) (*repo.Record, error) {
+func (s Service) GetRecord(id string) (*models.Record, error) {
 	res, ok := s.cache.Get(id)
 	if ok {
 		return res, nil
@@ -101,20 +101,24 @@ func (s Service) GetRecord(id string) (*repo.Record, error) {
 		return nil, fmt.Errorf("service error: %w", err)
 	}
 
+	if result.ID == "" {
+		return nil, nil
+	}
+
 	s.cache.Set(&result)
 
 	return &result, nil
 }
 
-func (s Service) UpdateRecord(id string, request repo.TransformRequest) *repo.Record {
+func (s Service) UpdateRecord(id string, request models.TransformRequest) *models.Record {
 	var tr transformer.Transformer
 
-	switch {
-	case request.Type == "reverse":
+	switch request.Type {
+	case "reverse":
 		tr = transformer.NewReverseTransformer()
-	case request.Type == "caesar":
+	case "caesar":
 		tr = transformer.NewCaesarTransformer(request.CaesarShift)
-	case request.Type == "base64":
+	case "base64":
 		tr = transformer.NewBase64Transformer()
 	}
 
@@ -123,16 +127,16 @@ func (s Service) UpdateRecord(id string, request repo.TransformRequest) *repo.Re
 		return nil
 	}
 
-	result, err := s.db.GetRecord(id)
+	result, _ := s.db.GetRecord(id)
 	result.Type = request.Type
 	result.CaesarShift = request.CaesarShift
 	result.Result = TransformResult
 
-	if err != nil {
+	if result.ID == "" {
 		result.ID = id
-		result.CreatedAt = time.Now().Unix()
+		result.CreatedAt = time.Now()
 
-		err = s.db.NewRecord(&result)
+		err = s.db.CreateRecord(&result)
 		if err != nil {
 			return nil
 		}
@@ -140,7 +144,7 @@ func (s Service) UpdateRecord(id string, request repo.TransformRequest) *repo.Re
 		return &result
 	}
 
-	result.UpdatedAt = time.Now().Unix()
+	result.UpdatedAt = time.Now()
 
 	err = s.db.UpdateRecord(&result)
 	if err != nil {

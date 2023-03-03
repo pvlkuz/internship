@@ -2,29 +2,29 @@ package cache
 
 import (
 	"container/list"
-	"main/repo"
+	"main/models"
 	"sync"
 )
 
 type InMemoCache struct {
-	cache map[string]*repo.Record
+	cache map[string]*models.Record
 	mu    sync.Mutex
 }
 
 func NewInMemoCache() *InMemoCache {
 	return &InMemoCache{
-		cache: make(map[string]*repo.Record),
+		cache: make(map[string]*models.Record),
 		mu:    sync.Mutex{},
 	}
 }
 
-func (c *InMemoCache) Set(value *repo.Record) {
+func (c *InMemoCache) Set(value *models.Record) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	c.cache[value.ID] = value
 }
 
-func (c *InMemoCache) Get(key string) (*repo.Record, bool) {
+func (c *InMemoCache) Get(key string) (*models.Record, bool) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	res, ok := c.cache[key]
@@ -46,7 +46,7 @@ type LruCache struct {
 }
 
 type Item struct {
-	data *repo.Record
+	data *models.Record
 	key  *list.Element
 }
 
@@ -59,7 +59,7 @@ func NewLruCache(capacity int) *LruCache {
 	}
 }
 
-func (c *LruCache) Set(value *repo.Record) {
+func (c *LruCache) Set(value *models.Record) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -85,7 +85,7 @@ func (c *LruCache) Set(value *repo.Record) {
 	}
 }
 
-func (c *LruCache) Get(key string) (*repo.Record, bool) {
+func (c *LruCache) Get(key string) (*models.Record, bool) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 

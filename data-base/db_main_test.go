@@ -2,7 +2,7 @@ package database
 
 import (
 	"log"
-	"main/repo"
+	"main/models"
 	"testing"
 	"time"
 
@@ -14,21 +14,21 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var db *RecordDB
-var records = []repo.Record{
+var db *Database
+var records = []models.Record{
 	{
 		ID:          uuid.NewString(),
 		Type:        "reverse",
 		CaesarShift: 0,
 		Result:      "321",
-		CreatedAt:   time.Now().Unix(),
+		CreatedAt:   time.Now(),
 	},
 	{
 		ID:          uuid.NewString(),
 		Type:        "reverse",
 		CaesarShift: 0,
 		Result:      "54321",
-		CreatedAt:   time.Now().Unix(),
+		CreatedAt:   time.Now(),
 	},
 }
 
@@ -53,26 +53,26 @@ func Test_Database(t *testing.T) {
 		log.Fatalf("failed to migrate up: %s", err.Error())
 	}
 
-	err = db.NewRecord(&records[0])
+	err = db.CreateRecord(&records[0])
 	assert.Nil(t, err)
 	result, err := db.GetRecord(records[0].ID)
 	assert.Nil(t, err)
 	assert.Equal(t, records[0], result)
 
-	err = db.NewRecord(&records[0])
-	err = db.NewRecord(&records[1])
+	err = db.CreateRecord(&records[0])
+	err = db.CreateRecord(&records[1])
 	assert.Nil(t, err)
 	results, err := db.GetAllRecords()
 	assert.Nil(t, err)
 	assert.Equal(t, records, results)
 
-	record := repo.Record{
+	record := models.Record{
 		ID:          records[0].ID,
 		Type:        records[0].Type,
 		CaesarShift: records[0].CaesarShift,
 		Result:      "987654321",
 		CreatedAt:   records[0].CreatedAt,
-		UpdatedAt:   time.Now().Unix(),
+		UpdatedAt:   time.Now(),
 	}
 	records = append(records, record)
 	err = db.UpdateRecord(&records[2])
