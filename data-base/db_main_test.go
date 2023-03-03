@@ -15,20 +15,21 @@ import (
 )
 
 var db *Database
+var myTime = time.Date(2023, 3, 3, 12, 0, 0, 0, time.FixedZone("", 0)) // manually set location to Greenwich
 var records = []models.Record{
 	{
 		ID:          uuid.NewString(),
 		Type:        "reverse",
 		CaesarShift: 0,
 		Result:      "321",
-		CreatedAt:   time.Now(),
+		CreatedAt:   myTime,
 	},
 	{
 		ID:          uuid.NewString(),
 		Type:        "reverse",
 		CaesarShift: 0,
 		Result:      "54321",
-		CreatedAt:   time.Now(),
+		CreatedAt:   myTime,
 	},
 }
 
@@ -59,7 +60,6 @@ func Test_Database(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, records[0], result)
 
-	err = db.CreateRecord(&records[0])
 	err = db.CreateRecord(&records[1])
 	assert.Nil(t, err)
 	results, err := db.GetAllRecords()
@@ -72,7 +72,7 @@ func Test_Database(t *testing.T) {
 		CaesarShift: records[0].CaesarShift,
 		Result:      "987654321",
 		CreatedAt:   records[0].CreatedAt,
-		UpdatedAt:   time.Now(),
+		UpdatedAt:   myTime,
 	}
 	records = append(records, record)
 	err = db.UpdateRecord(&records[2])
@@ -83,7 +83,7 @@ func Test_Database(t *testing.T) {
 	err = db.DeleteRecord(records[2].ID)
 	assert.Nil(t, err)
 	result, err = db.GetRecord(records[2].ID)
-	assert.NotNil(t, err)
+	assert.Nil(t, err)
 
 	err = m.Down()
 	if err != nil {

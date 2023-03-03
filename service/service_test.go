@@ -81,9 +81,9 @@ func Test_NewService(t *testing.T) {
 }
 
 var NewRecordRequestTable = []models.TransformRequest{
-	models.TransformRequest{Type: "caesar", CaesarShift: -3, Input: "abc"},
-	models.TransformRequest{Type: "reverse", CaesarShift: 0, Input: "54321"},
-	models.TransformRequest{Type: "base64", CaesarShift: 0, Input: "Man"},
+	{Type: "caesar", CaesarShift: -3, Input: "abc"},
+	{Type: "reverse", CaesarShift: 0, Input: "54321"},
+	{Type: "base64", CaesarShift: 0, Input: "Man"},
 }
 var NewRecordResultTable = []string{
 	"xyz", "12345", "TWFu",

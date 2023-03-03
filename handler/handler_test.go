@@ -18,8 +18,6 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-const connStr = "postgresql://postgres:password@localhost:5432/postgres?sslmode=disable"
-
 var testTime = time.Now()
 
 type MockDB struct {
@@ -66,9 +64,9 @@ func (mock *MockDB) DeleteRecord(id string) error {
 }
 
 var NewRecordRequestTable = []models.TransformRequest{
-	models.TransformRequest{Type: "caesar", CaesarShift: -3, Input: "abc"},
-	models.TransformRequest{Type: "reverse", CaesarShift: 0, Input: "54321"},
-	models.TransformRequest{Type: "base64", CaesarShift: 0, Input: "Man"},
+	{Type: "caesar", CaesarShift: -3, Input: "abc"},
+	{Type: "reverse", CaesarShift: 0, Input: "54321"},
+	{Type: "base64", CaesarShift: 0, Input: "Man"},
 }
 var NewRecordResultTable = []string{
 	"xyz", "12345", "TWFu",
@@ -105,8 +103,8 @@ func Test_NewRecordHandler(t *testing.T) {
 }
 
 var GetAllRecordsTestTable = []models.TransformRequest{
-	models.TransformRequest{Type: "reverse", CaesarShift: 0, Input: "54321"},
-	models.TransformRequest{Type: "caesar", CaesarShift: -3, Input: "xyz"},
+	{Type: "reverse", CaesarShift: 0, Input: "54321"},
+	{Type: "caesar", CaesarShift: -3, Input: "xyz"},
 }
 
 func Test_GetAllRecordsHandler(t *testing.T) {
@@ -175,9 +173,9 @@ func Test_GetRecordHandler(t *testing.T) {
 }
 
 var UpdateRecordTestTable = []models.TransformRequest{
-	models.TransformRequest{Type: "caesar", CaesarShift: -3, Input: "abc"},
-	models.TransformRequest{Type: "reverse", CaesarShift: 0, Input: "54321"},
-	models.TransformRequest{Type: "base64", CaesarShift: 0, Input: "Man"},
+	{Type: "caesar", CaesarShift: -3, Input: "abc"},
+	{Type: "reverse", CaesarShift: 0, Input: "54321"},
+	{Type: "base64", CaesarShift: 0, Input: "Man"},
 }
 var UpdateRecordResultTable = []string{
 	"xyz", "12345", "TWFu",

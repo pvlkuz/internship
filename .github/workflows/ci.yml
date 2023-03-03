@@ -4,8 +4,8 @@ on: [push]
 
 jobs:
 
-  Tests:
-    name: Tests and Benchmark (with db service container)
+  TestForDatabase:
+    name: Test and Benchmark (with db service container)
     runs-on: ubuntu-latest
     services:
       database:
