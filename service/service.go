@@ -111,7 +111,7 @@ func (s Service) GetRecord(id string) (*models.Record, error) {
 	}
 
 	if result.ID == "" {
-		return nil, nil
+		return &models.Record{}, nil
 	}
 
 	s.cache.Set(&result)
