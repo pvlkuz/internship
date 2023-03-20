@@ -5,7 +5,6 @@ import (
 	"main/models"
 	"main/transformer"
 	"strings"
-	"time"
 
 	"github.com/google/uuid"
 )
@@ -67,8 +66,6 @@ func (s Service) CreateRecord(request models.TransformRequest) (*models.Record, 
 		Type:        request.Type,
 		CaesarShift: request.CaesarShift,
 		Result:      TransformResult,
-		CreatedAt:   time.Now(),
-		UpdatedAt:   time.Time{},
 	}
 
 	err = s.db.CreateRecord(result)
@@ -110,8 +107,9 @@ func (s Service) GetRecord(id string) (*models.Record, error) {
 		return nil, fmt.Errorf("service error: %w", err)
 	}
 
+	//nolint:nilnil
 	if result.ID == "" {
-		return &models.Record{}, nil
+		return nil, nil
 	}
 
 	s.cache.Set(&result)
@@ -132,7 +130,6 @@ func (s Service) UpdateRecord(id string, request models.TransformRequest) *model
 
 	if result.ID == "" {
 		result.ID = id
-		result.CreatedAt = time.Now()
 
 		err = s.db.CreateRecord(&result)
 		if err != nil {
@@ -142,14 +139,17 @@ func (s Service) UpdateRecord(id string, request models.TransformRequest) *model
 		return &result
 	}
 
-	result.UpdatedAt = time.Now()
-
 	err = s.db.UpdateRecord(&result)
 	if err != nil {
 		return nil
 	}
 
-	s.cache.Set(&result)
+	res, err := s.db.GetRecord(result.ID)
+	if err != nil {
+		return nil
+	}
 
-	return &result
+	s.cache.Set(&res)
+
+	return &res
 }

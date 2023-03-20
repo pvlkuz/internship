@@ -5,7 +5,7 @@ import (
 	"log"
 	"main/cache"
 	database "main/data-base"
-	"main/handler"
+	"main/httpserver"
 	"main/models"
 	"testing"
 	"time"
@@ -74,7 +74,7 @@ func (mock *MockCache) Delete(key string) {
 
 }
 
-var TestService handler.Service
+var TestService httpserver.Service
 
 func Test_NewService(t *testing.T) {
 	TestService = NewService(new(MockDB), new(MockCache))

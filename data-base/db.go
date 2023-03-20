@@ -3,17 +3,16 @@ package database
 import (
 	"fmt"
 	"main/models"
-	"sort"
 
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
 )
 
 const (
-	queryCreate     = `INSERT INTO records VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`
+	queryCreate     = `INSERT INTO records VALUES ($1, $2, $3, $4) RETURNING *`
 	querySingleRead = `SELECT * FROM records WHERE id = $1`
-	queryMultiRead  = `SELECT * FROM records`
-	queryUpdate     = `UPDATE records SET transform_type = $1, caesar_shift = $2, result = $3, updated_at = $4 WHERE id = $5 RETURNING *`
+	queryMultiRead  = `SELECT * FROM records ORDER BY created_at DESC`
+	queryUpdate     = `UPDATE records SET transform_type = $1, caesar_shift = $2, result = $3 WHERE id = $4 RETURNING *`
 	queryDelete     = `DELETE FROM records WHERE id = $1`
 )
 
@@ -36,7 +35,7 @@ type Database struct {
 }
 
 func (db *Database) CreateRecord(r *models.Record) error {
-	err := db.Get(r, queryCreate, r.ID, r.Type, r.CaesarShift, r.Result, r.CreatedAt, r.UpdatedAt)
+	err := db.Get(r, queryCreate, r.ID, r.Type, r.CaesarShift, r.Result)
 
 	if err != nil {
 		return fmt.Errorf("creating new record: %w", err)
@@ -64,10 +63,6 @@ func (db *Database) GetAllRecords() ([]models.Record, error) {
 	var result []models.Record
 	err := db.Select(&result, queryMultiRead)
 
-	sort.Slice(result, func(i, j int) bool {
-		return result[i].CreatedAt.After(result[j].CreatedAt)
-	})
-
 	if err != nil {
 		return result, fmt.Errorf("reading all records: %w", err)
 	}
@@ -76,7 +71,7 @@ func (db *Database) GetAllRecords() ([]models.Record, error) {
 }
 
 func (db *Database) UpdateRecord(r *models.Record) error {
-	_, err := db.Exec(queryUpdate, r.Type, r.CaesarShift, r.Result, r.UpdatedAt, r.ID)
+	_, err := db.Exec(queryUpdate, r.Type, r.CaesarShift, r.Result, r.ID)
 	if err != nil {
 		return fmt.Errorf("updating record: %w", err)
 	}

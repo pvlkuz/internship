@@ -7,7 +7,7 @@ import (
 	"log"
 	"main/cache"
 	database "main/data-base"
-	"main/handler"
+	"main/httpserver"
 	"main/service"
 	"main/transformer"
 	"os"
@@ -23,25 +23,20 @@ type IoConfig struct {
 }
 
 const connStr = "postgresql://postgres:password@database:5432/postgres?sslmode=disable"
+const help = `
+Usage:  ./bin/main COMMAND [OPTIONS]
 
-//nolint:forbidigo
-func printHelp() {
-	fmt.Println(` `)
-	fmt.Println(`Usage:  ./bin/main COMMAND [OPTIONS]`)
-	fmt.Println(` `)
-	fmt.Println(`Commands:`)
-	fmt.Println(`	transform \t Transform string - reversing it if no other option provided`)
-	fmt.Println(`			(by default input from std.in and output to std.out)`)
-	fmt.Println(` `)
-	fmt.Println(`	crud \t\t Start a server listening on port 8080, and connecting to db on port 5432`)
-	fmt.Println(` `)
-	fmt.Println(`Options:`)
-	fmt.Println(`	-input \t\t Path to input file`)
-	fmt.Println(`	-output \t Path to output file`)
-	fmt.Println(`	-caesar \t Run Caesar cipher, provide shift number (different from 0)`)
-	fmt.Println(`	-base64 \t Run Base64 cipher`)
-	fmt.Println(` `)
-}
+Commands:
+	transform \t Transform string - reversing it if no other option provided
+	(by default input from std.in and output to std.out)
+
+	crud \t\t Start a server listening on port 8080, and connecting to db on port 5432
+
+Options:
+	-input \t\t Path to input file
+	-output \t Path to output file
+	-caesar \t Run Caesar cipher, provide shift number (different from 0)
+	-base64 \t Run Base64 cipher \n`
 
 func ioSetup(config IoConfig) (io.Reader, io.Writer, bool) {
 	var (
@@ -118,7 +113,7 @@ func main() {
 		fmt.Println("type help for details")
 
 	case "help":
-		printHelp()
+		fmt.Println(help)
 	case "transform":
 		transform()
 	case "crud":
@@ -147,7 +142,7 @@ func main() {
 
 		cache := cache.NewLruCache(10)
 		service := service.NewService(db, cache)
-		myhandler := handler.NewHandler(service)
+		myhandler := httpserver.NewHandler(service)
 
 		err = myhandler.RunServer()
 		if err != nil {
