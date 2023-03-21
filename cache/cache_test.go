@@ -1,7 +1,7 @@
 package cache
 
 import (
-	"main/repo"
+	"main/models"
 	"main/service"
 	"testing"
 	"time"
@@ -9,36 +9,36 @@ import (
 	"github.com/google/uuid"
 )
 
-var testcache service.CacheInterface
+var cache service.Cache
 
-var records = []repo.Record{
+var records = []models.Record{
 	{
 		ID:          uuid.NewString(),
 		Type:        "reverse",
 		CaesarShift: 0,
 		Result:      "321",
-		CreatedAt:   time.Now().Unix(),
+		CreatedAt:   time.Now(),
 	},
 	{
 		ID:          uuid.NewString(),
 		Type:        "reverse",
 		CaesarShift: 0,
 		Result:      "54321",
-		CreatedAt:   time.Now().Unix(),
+		CreatedAt:   time.Now(),
 	},
 	{
 		ID:          uuid.NewString(),
 		Type:        "base64",
 		CaesarShift: 0,
 		Result:      "Man",
-		CreatedAt:   time.Now().Unix(),
+		CreatedAt:   time.Now(),
 	},
 	{
 		ID:          uuid.NewString(),
 		Type:        "caesar",
 		CaesarShift: -3,
 		Result:      "abc",
-		CreatedAt:   time.Now().Unix(),
+		CreatedAt:   time.Now(),
 	},
 }
 

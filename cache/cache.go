@@ -3,7 +3,7 @@ package cache
 import (
 	"container/list"
 	"context"
-	"main/repo"
+	"main/models"
 	"sync"
 	"time"
 
@@ -12,24 +12,24 @@ import (
 )
 
 type InMemoCache struct {
-	cache map[string]*repo.Record
+	cache map[string]*models.Record
 	mu    sync.Mutex
 }
 
 func NewInMemoCache() *InMemoCache {
 	return &InMemoCache{
-		cache: make(map[string]*repo.Record),
+		cache: make(map[string]*models.Record),
 		mu:    sync.Mutex{},
 	}
 }
 
-func (c *InMemoCache) Set(value *repo.Record) {
+func (c *InMemoCache) Set(value *models.Record) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	c.cache[value.ID] = value
 }
 
-func (c *InMemoCache) Get(key string) (*repo.Record, bool) {
+func (c *InMemoCache) Get(key string) (*models.Record, bool) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	res, ok := c.cache[key]
@@ -51,7 +51,7 @@ type LruCache struct {
 }
 
 type Item struct {
-	data *repo.Record
+	data *models.Record
 	key  *list.Element
 }
 
@@ -64,7 +64,7 @@ func NewLruCache(capacity int) *LruCache {
 	}
 }
 
-func (c *LruCache) Set(value *repo.Record) {
+func (c *LruCache) Set(value *models.Record) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -90,18 +90,18 @@ func (c *LruCache) Set(value *repo.Record) {
 	}
 }
 
-func (c *LruCache) Get(key string) (*repo.Record, bool) {
+func (c *LruCache) Get(key string) (*models.Record, bool) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
 	item, ok := c.cache[key]
-	if ok {
-		c.queue.MoveToFront(item.key)
-
-		return item.data, true
+	if !ok {
+		return nil, false
 	}
 
-	return nil, false
+	c.queue.MoveToFront(item.key)
+
+	return item.data, true
 }
 
 func (c *LruCache) Delete(key string) {
@@ -134,7 +134,7 @@ func NewRedisCache(address string) *MyRedisCache {
 	}
 }
 
-func (r *MyRedisCache) Set(value *repo.Record) {
+func (r *MyRedisCache) Set(value *models.Record) {
 	//nolint:exhaustivestruct, exhaustruct, errcheck
 	r.cache.Set(&cache.Item{
 		Ctx:   context.TODO(),
@@ -144,8 +144,8 @@ func (r *MyRedisCache) Set(value *repo.Record) {
 	})
 }
 
-func (r *MyRedisCache) Get(key string) (*repo.Record, bool) {
-	result := repo.Record{} //nolint:exhaustivestruct, exhaustruct
+func (r *MyRedisCache) Get(key string) (*models.Record, bool) {
+	result := models.Record{} //nolint:exhaustivestruct, exhaustruct
 
 	err := r.cache.Get(context.TODO(), key, &result)
 	if err != nil {

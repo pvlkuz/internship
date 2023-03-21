@@ -1,94 +1,102 @@
 package service
 
 import (
-	"main/repo"
+	"fmt"
+	"main/models"
 	"main/transformer"
 	"strings"
-	"time"
 
 	"github.com/google/uuid"
-	"github.com/pkg/errors"
 )
 
 type Service struct {
-	db    DBLayer
-	cache CacheInterface
+	db    DB
+	cache Cache
 }
 
-type DBLayer interface {
-	NewRecord(r *repo.Record) error
-	GetRecord(id string) (repo.Record, error)
-	GetAllRecords() ([]repo.Record, error)
-	UpdateRecord(r *repo.Record) error
+type DB interface {
+	CreateRecord(r *models.Record) error
+	GetRecord(id string) (models.Record, error)
+	GetAllRecords() ([]models.Record, error)
+	UpdateRecord(r *models.Record) error
 	DeleteRecord(id string) error
 }
 
-type CacheInterface interface {
-	Set(value *repo.Record)
-	Get(key string) (*repo.Record, bool)
+type Cache interface {
+	Set(value *models.Record)
+	Get(key string) (*models.Record, bool)
 	Delete(key string)
 }
 
-func NewService(db DBLayer, cache CacheInterface) Service {
+func NewService(db DB, cache Cache) Service {
 	return Service{
 		db:    db,
 		cache: cache,
 	}
 }
 
-func (s Service) CreateRecord(request repo.TransformRequest) *repo.Record {
+func SwitchAndTransform(request models.TransformRequest) (string, error) {
 	var tr transformer.Transformer
 
-	switch {
-	case request.Type == "reverse":
+	switch request.Type {
+	case "reverse":
 		tr = transformer.NewReverseTransformer()
-	case request.Type == "caesar":
+	case "caesar":
 		tr = transformer.NewCaesarTransformer(request.CaesarShift)
-	case request.Type == "base64":
+	case "base64":
 		tr = transformer.NewBase64Transformer()
 	}
 
-	res, err := tr.Transform(strings.NewReader(request.Input), false)
+	TransformResult, err := tr.Transform(strings.NewReader(request.Input), false)
 	if err != nil {
-		return nil
+		return "", fmt.Errorf("service error: %w", err)
 	}
 
-	result := &repo.Record{
+	return TransformResult, nil
+}
+
+func (s Service) CreateRecord(request models.TransformRequest) (*models.Record, error) {
+	TransformResult, err := SwitchAndTransform(request)
+	if err != nil {
+		return nil, err
+	}
+
+	result := &models.Record{
 		ID:          uuid.NewString(),
 		Type:        request.Type,
 		CaesarShift: request.CaesarShift,
-		Result:      res,
-		CreatedAt:   time.Now().Unix(),
-		UpdatedAt:   0,
+		Result:      TransformResult,
 	}
 
-	err = s.db.NewRecord(result)
+	err = s.db.CreateRecord(result)
 	if err != nil {
-		return nil
+		return nil, fmt.Errorf("service error: %w", err)
 	}
 
-	return result
+	return result, nil
 }
 
 func (s Service) DeleteRecord(id string) error {
 	err := s.db.DeleteRecord(id)
 	if err != nil {
-		return errors.Wrap(err, "service error while deleting")
+		return fmt.Errorf("service error: %w", err)
 	}
+
+	s.cache.Delete(id)
 
 	return nil
 }
 
-func (s Service) GetRecords() ([]repo.Record, error) {
+func (s Service) GetAllRecords() ([]models.Record, error) {
 	values, err := s.db.GetAllRecords()
 	if err != nil {
-		return nil, errors.Wrap(err, "service error while reading all records")
+		return nil, fmt.Errorf("service error: %w", err)
 	}
 
 	return values, nil
 }
 
-func (s Service) GetRecord(id string) (*repo.Record, error) {
+func (s Service) GetRecord(id string) (*models.Record, error) {
 	res, ok := s.cache.Get(id)
 	if ok {
 		return res, nil
@@ -96,7 +104,12 @@ func (s Service) GetRecord(id string) (*repo.Record, error) {
 
 	result, err := s.db.GetRecord(id)
 	if err != nil {
-		return nil, errors.Wrap(err, "service error while reading one record")
+		return nil, fmt.Errorf("service error: %w", err)
+	}
+
+	//nolint:nilnil
+	if result.ID == "" {
+		return nil, nil
 	}
 
 	s.cache.Set(&result)
@@ -104,33 +117,21 @@ func (s Service) GetRecord(id string) (*repo.Record, error) {
 	return &result, nil
 }
 
-func (s Service) UpdateRecord(id string, request repo.TransformRequest) *repo.Record {
-	var tr transformer.Transformer
-
-	switch {
-	case request.Type == "reverse":
-		tr = transformer.NewReverseTransformer()
-	case request.Type == "caesar":
-		tr = transformer.NewCaesarTransformer(request.CaesarShift)
-	case request.Type == "base64":
-		tr = transformer.NewBase64Transformer()
-	}
-
-	TransformResult, err := tr.Transform(strings.NewReader(request.Input), false)
+func (s Service) UpdateRecord(id string, request models.TransformRequest) *models.Record {
+	TransformResult, err := SwitchAndTransform(request)
 	if err != nil {
 		return nil
 	}
 
-	result, err := s.db.GetRecord(id)
+	result, _ := s.db.GetRecord(id)
 	result.Type = request.Type
 	result.CaesarShift = request.CaesarShift
 	result.Result = TransformResult
 
-	if err != nil {
+	if result.ID == "" {
 		result.ID = id
-		result.CreatedAt = time.Now().Unix()
 
-		err = s.db.NewRecord(&result)
+		err = s.db.CreateRecord(&result)
 		if err != nil {
 			return nil
 		}
@@ -138,14 +139,17 @@ func (s Service) UpdateRecord(id string, request repo.TransformRequest) *repo.Re
 		return &result
 	}
 
-	result.UpdatedAt = time.Now().Unix()
-
 	err = s.db.UpdateRecord(&result)
 	if err != nil {
 		return nil
 	}
 
-	s.cache.Set(&result)
+	res, err := s.db.GetRecord(result.ID)
+	if err != nil {
+		return nil
+	}
 
-	return &result
+	s.cache.Set(&res)
+
+	return &res
 }

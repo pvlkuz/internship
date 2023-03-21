@@ -5,8 +5,8 @@ import (
 	"log"
 	"main/cache"
 	database "main/data-base"
-	"main/handler"
-	"main/repo"
+	"main/httpserver"
+	"main/models"
 	"testing"
 	"time"
 
@@ -21,41 +21,39 @@ type MockDB struct {
 	mock.Mock
 }
 
-func (mock *MockDB) NewRecord(r *repo.Record) error {
-	// args := mock.Called()
-	// result :=args.Get(0)
+func (mock *MockDB) CreateRecord(r *models.Record) error {
 	return nil
 }
-func (mock *MockDB) GetRecord(id string) (repo.Record, error) {
-	result := repo.Record{
+func (mock *MockDB) GetRecord(id string) (models.Record, error) {
+	result := models.Record{
 		ID:          "1111",
 		Type:        "reverse",
 		CaesarShift: 0,
 		Result:      "54321",
-		CreatedAt:   time.Now().Unix(),
+		CreatedAt:   time.Now(),
 	}
 	return result, nil
 }
-func (mock *MockDB) GetAllRecords() ([]repo.Record, error) {
-	result := []repo.Record{
+func (mock *MockDB) GetAllRecords() ([]models.Record, error) {
+	result := []models.Record{
 		{
 			ID:          uuid.NewString(),
 			Type:        "reverse",
 			CaesarShift: 0,
 			Result:      "54321",
-			CreatedAt:   time.Now().Unix(),
+			CreatedAt:   time.Now(),
 		},
 		{
 			ID:          uuid.NewString(),
 			Type:        "caesar",
 			CaesarShift: -3,
 			Result:      "xyz",
-			CreatedAt:   time.Now().Unix(),
+			CreatedAt:   time.Now(),
 		},
 	}
 	return result, nil
 }
-func (mock *MockDB) UpdateRecord(r *repo.Record) error {
+func (mock *MockDB) UpdateRecord(r *models.Record) error {
 	return nil
 }
 func (mock *MockDB) DeleteRecord(id string) error {
@@ -66,26 +64,26 @@ type MockCache struct {
 	mock.Mock
 }
 
-func (mock *MockCache) Set(value *repo.Record) {
+func (mock *MockCache) Set(value *models.Record) {
 
 }
-func (mock *MockCache) Get(key string) (*repo.Record, bool) {
+func (mock *MockCache) Get(key string) (*models.Record, bool) {
 	return nil, false
 }
 func (mock *MockCache) Delete(key string) {
 
 }
 
-var TestService handler.ServiceInterface
+var TestService httpserver.Service
 
 func Test_NewService(t *testing.T) {
 	TestService = NewService(new(MockDB), new(MockCache))
 }
 
-var NewRecordRequestTable = []repo.TransformRequest{
-	repo.TransformRequest{Type: "caesar", CaesarShift: -3, Input: "abc"},
-	repo.TransformRequest{Type: "reverse", CaesarShift: 0, Input: "54321"},
-	repo.TransformRequest{Type: "base64", CaesarShift: 0, Input: "Man"},
+var NewRecordRequestTable = []models.TransformRequest{
+	{Type: "caesar", CaesarShift: -3, Input: "abc"},
+	{Type: "reverse", CaesarShift: 0, Input: "54321"},
+	{Type: "base64", CaesarShift: 0, Input: "Man"},
 }
 var NewRecordResultTable = []string{
 	"xyz", "12345", "TWFu",
@@ -101,8 +99,8 @@ func Test_GetRecord(t *testing.T) {
 	TestService.GetRecord("123")
 }
 
-func Test_GetRecords(t *testing.T) {
-	TestService.GetRecords()
+func Test_GetAllRecords(t *testing.T) {
+	TestService.GetAllRecords()
 }
 
 func Test_UpdateRecord(t *testing.T) {
@@ -131,13 +129,12 @@ func Benchmark_GetRecord(b *testing.B) {
 	if err != nil {
 		log.Fatalf("failed to initialize db: %s", err.Error())
 	}
-	//testcache := cache.NewLruCache(10)
-	// testcache := cache.NewInMemoCache()
+
 	testcache := new(MockCache)
 	s := NewService(db, testcache)
 	var ids [20]string
 	for i := 0; i < 20; i++ {
-		result := s.CreateRecord(NewRecordRequestTable[1])
+		result, _ := s.CreateRecord(NewRecordRequestTable[1])
 		ids[i] = result.ID
 	}
 
@@ -167,13 +164,12 @@ func Benchmark_GetRecord_MyCache(b *testing.B) {
 	if err != nil {
 		log.Fatalf("failed to initialize db: %s", err.Error())
 	}
+
 	testcache := cache.NewLruCache(10)
-	// testcache := cache.NewInMemoCache()
-	//testcache := new(MockCache)
 	s := NewService(db, testcache)
 	var ids [20]string
 	for i := 0; i < 20; i++ {
-		result := s.CreateRecord(NewRecordRequestTable[1])
+		result, _ := s.CreateRecord(NewRecordRequestTable[1])
 		ids[i] = result.ID
 	}
 
