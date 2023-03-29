@@ -5,7 +5,6 @@ import (
 	"log"
 	"main/cache"
 	database "main/data-base"
-	"main/httpserver"
 	"main/models"
 	"testing"
 	"time"
@@ -74,42 +73,43 @@ func (mock *MockCache) Delete(key string) {
 
 }
 
-var TestService httpserver.Service
-
-func Test_NewService(t *testing.T) {
-	TestService = NewService(new(MockDB), new(MockCache))
-}
-
 var NewRecordRequestTable = []models.TransformRequest{
 	{Type: "caesar", CaesarShift: -3, Input: "abc"},
 	{Type: "reverse", CaesarShift: 0, Input: "54321"},
 	{Type: "base64", CaesarShift: 0, Input: "Man"},
 }
-var NewRecordResultTable = []string{
-	"xyz", "12345", "TWFu",
-}
 
 func Test_NewRecord(t *testing.T) {
+	TestService := NewService(new(MockDB), new(MockCache))
+
 	for _, test := range NewRecordRequestTable {
 		TestService.CreateRecord(test)
 	}
 }
 
 func Test_GetRecord(t *testing.T) {
+	TestService := NewService(new(MockDB), new(MockCache))
+
 	TestService.GetRecord("123")
 }
 
 func Test_GetAllRecords(t *testing.T) {
+	TestService := NewService(new(MockDB), new(MockCache))
+
 	TestService.GetAllRecords()
 }
 
 func Test_UpdateRecord(t *testing.T) {
+	TestService := NewService(new(MockDB), new(MockCache))
+
 	for _, test := range NewRecordRequestTable {
 		TestService.UpdateRecord("123", test)
 	}
 }
 
 func Test_DeleteRecord(t *testing.T) {
+	TestService := NewService(new(MockDB), new(MockCache))
+
 	TestService.DeleteRecord("123")
 }
 

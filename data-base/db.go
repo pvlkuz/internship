@@ -36,7 +36,6 @@ type Database struct {
 
 func (db *Database) CreateRecord(r *models.Record) error {
 	err := db.Get(r, queryCreate, r.ID, r.Type, r.CaesarShift, r.Result)
-
 	if err != nil {
 		return fmt.Errorf("creating new record: %w", err)
 	}
@@ -49,11 +48,7 @@ func (db *Database) GetRecord(id string) (models.Record, error) {
 
 	err := db.Get(&result, querySingleRead, id)
 	if err != nil {
-		if err.Error() == "sql: no rows in result set" {
-			return models.Record{}, nil
-		}
-
-		return models.Record{}, fmt.Errorf("reading one record: %w", err)
+		return result, fmt.Errorf("reading one record: %w", err)
 	}
 
 	return result, nil

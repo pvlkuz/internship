@@ -21,14 +21,14 @@ type TransformRequest struct {
 }
 
 var (
-	ErrType  = fmt.Errorf("expected tranformation type field: reverse/caesar/base64")
-	ErrShift = fmt.Errorf("expected shift field (not 0)")
-	ErrIn    = fmt.Errorf("expected input field")
+	ErrInvalidType = fmt.Errorf("expected tranformation type field: reverse/caesar/base64")
+	ErrShift       = fmt.Errorf("expected shift field (not 0)")
+	ErrIn          = fmt.Errorf("expected input field")
 )
 
 func (t TransformRequest) Validate() error {
 	if t.Type != "reverse" && t.Type != "caesar" && t.Type != "base64" {
-		return ErrType
+		return ErrInvalidType
 	}
 
 	if t.Type == "caesar" && t.CaesarShift == 0 {

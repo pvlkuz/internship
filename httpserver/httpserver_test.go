@@ -12,6 +12,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 )
 
 type MockService struct {
@@ -67,11 +68,12 @@ func Test_CreateRecord(t *testing.T) {
 	h := NewHandler(service)
 
 	req, err := http.NewRequest("POST", "/records", strings.NewReader(fmt.Sprintf(`{"type":"%s", "input":"%s", "shift":%d}`, TestRequest[0].Type, TestRequest[0].Input, TestRequest[0].CaesarShift)))
-	if err != nil {
-		t.Fatalf("failed to create request: %s", err)
-	}
+	// if err != nil {
+	// 	t.Fatalf("failed to create request: %s", err)
+	// }
+	require.ErrorIs(t, err, nil)
 	rr := httptest.NewRecorder()
-	handler := http.HandlerFunc(h.NewRecord)
+	handler := http.HandlerFunc(h.CreateRecord)
 	handler.ServeHTTP(rr, req)
 	if rr.Code != http.StatusCreated {
 		t.Errorf("handler returned wrong status code: got %v want %v",
@@ -90,7 +92,7 @@ func Test_GetAllRecords(t *testing.T) {
 	service := new(MockService)
 	h := NewHandler(service)
 
-	req, err := http.NewRequest("GET", "/records", strings.NewReader(""))
+	req, err := http.NewRequest("GET", "/records", nil)
 	if err != nil {
 		t.Fatalf("failed to create request: %s", err)
 	}
@@ -128,7 +130,7 @@ func Test_GetRecord(t *testing.T) {
 	service := new(MockService)
 	h := NewHandler(service)
 
-	req, err := http.NewRequest("GET", "/records/1111", strings.NewReader(""))
+	req, err := http.NewRequest("GET", "/records/1111", nil)
 	if err != nil {
 		t.Fatalf("failed to create request: %s", err)
 	}
@@ -178,8 +180,8 @@ func Test_DeleteRecord(t *testing.T) {
 	service := new(MockService)
 	h := NewHandler(service)
 
-	MyURL := fmt.Sprintf("http://localhost/records/%s", "1111")
-	req, err := http.NewRequest("DELETE", MyURL, nil)
+	stringURL := fmt.Sprintf("http://localhost/records/%s", "1111")
+	req, err := http.NewRequest("DELETE", stringURL, nil)
 	if err != nil {
 		t.Fatalf("failer to create request: %s", err)
 	}

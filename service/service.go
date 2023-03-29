@@ -47,16 +47,16 @@ func SwitchAndTransform(request models.TransformRequest) (string, error) {
 		tr = transformer.NewBase64Transformer()
 	}
 
-	TransformResult, err := tr.Transform(strings.NewReader(request.Input), false)
+	transformResult, err := tr.Transform(strings.NewReader(request.Input), false)
 	if err != nil {
-		return "", fmt.Errorf("service error: %w", err)
+		return "", fmt.Errorf("transforming error: %w", err)
 	}
 
-	return TransformResult, nil
+	return transformResult, nil
 }
 
 func (s Service) CreateRecord(request models.TransformRequest) (*models.Record, error) {
-	TransformResult, err := SwitchAndTransform(request)
+	transformResult, err := SwitchAndTransform(request)
 	if err != nil {
 		return nil, err
 	}
@@ -65,24 +65,24 @@ func (s Service) CreateRecord(request models.TransformRequest) (*models.Record, 
 		ID:          uuid.NewString(),
 		Type:        request.Type,
 		CaesarShift: request.CaesarShift,
-		Result:      TransformResult,
+		Result:      transformResult,
 	}
 
 	err = s.db.CreateRecord(result)
 	if err != nil {
-		return nil, fmt.Errorf("service error: %w", err)
+		return nil, fmt.Errorf("creating error: %w", err)
 	}
 
 	return result, nil
 }
 
 func (s Service) DeleteRecord(id string) error {
+	s.cache.Delete(id)
+
 	err := s.db.DeleteRecord(id)
 	if err != nil {
-		return fmt.Errorf("service error: %w", err)
+		return fmt.Errorf("deleting error: %w", err)
 	}
-
-	s.cache.Delete(id)
 
 	return nil
 }
@@ -90,7 +90,7 @@ func (s Service) DeleteRecord(id string) error {
 func (s Service) GetAllRecords() ([]models.Record, error) {
 	values, err := s.db.GetAllRecords()
 	if err != nil {
-		return nil, fmt.Errorf("service error: %w", err)
+		return nil, fmt.Errorf("reading error: %w", err)
 	}
 
 	return values, nil
@@ -104,12 +104,7 @@ func (s Service) GetRecord(id string) (*models.Record, error) {
 
 	result, err := s.db.GetRecord(id)
 	if err != nil {
-		return nil, fmt.Errorf("service error: %w", err)
-	}
-
-	//nolint:nilnil
-	if result.ID == "" {
-		return nil, nil
+		return nil, fmt.Errorf("reading error: %w", err)
 	}
 
 	s.cache.Set(&result)
@@ -118,7 +113,7 @@ func (s Service) GetRecord(id string) (*models.Record, error) {
 }
 
 func (s Service) UpdateRecord(id string, request models.TransformRequest) *models.Record {
-	TransformResult, err := SwitchAndTransform(request)
+	transformResult, err := SwitchAndTransform(request)
 	if err != nil {
 		return nil
 	}
@@ -126,7 +121,7 @@ func (s Service) UpdateRecord(id string, request models.TransformRequest) *model
 	result, _ := s.db.GetRecord(id)
 	result.Type = request.Type
 	result.CaesarShift = request.CaesarShift
-	result.Result = TransformResult
+	result.Result = transformResult
 
 	if result.ID == "" {
 		result.ID = id

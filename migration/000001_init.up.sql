@@ -1,7 +1,7 @@
 
 CREATE EXTENSION "uuid-ossp";
 
-CREATE TABLE IF NOT EXISTS Records
+CREATE TABLE IF NOT EXISTS records
 (
      id UUID PRIMARY KEY, 
      transform_type TEXT NOT NULL,
@@ -19,4 +19,4 @@ END;
 
 $update_stamp$ language plpgsql;
 
-CREATE TRIGGER update_time BEFORE UPDATE ON Records FOR EACH ROW EXECUTE PROCEDURE update_stamp();
+CREATE TRIGGER update_time BEFORE UPDATE ON records FOR EACH ROW EXECUTE PROCEDURE update_stamp();

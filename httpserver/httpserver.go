@@ -1,7 +1,9 @@
 package httpserver
 
 import (
+	"database/sql"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"main/models"
 	"net/http"
@@ -33,7 +35,7 @@ func (h *Handler) RunServer() error {
 	router := chi.NewRouter()
 	router.Use(middleware.Recoverer)
 	router.Use(middleware.Logger)
-	router.Post("/records", h.NewRecord)
+	router.Post("/records", h.CreateRecord)
 	router.Get("/records", h.GetAllRecords)
 	router.Get("/records/{id}", h.GetRecord)
 	router.Delete("/records/{id}", h.DeleteRecord)
@@ -53,36 +55,42 @@ func (h *Handler) RunServer() error {
 	return nil
 }
 
-func ResponseWithJSON(w http.ResponseWriter, statusCode int, record interface{}) {
+func ResponseWithJSON(w http.ResponseWriter, statusCode int, data interface{}) {
 	w.Header().Add("Content-Type", "application/json")
-	w.WriteHeader(statusCode)
 
-	err := json.NewEncoder(w).Encode(record)
-
+	b, err := json.Marshal(data)
 	if err != nil {
-		ResponseWithJSON(w, http.StatusInternalServerError, err.Error())
+		w.WriteHeader(http.StatusInternalServerError)
+		return
 	}
+
+	w.WriteHeader(statusCode)
+	w.Write(b)
 }
 
-func (h *Handler) NewRecord(w http.ResponseWriter, r *http.Request) {
-	var request *models.TransformRequest
+func (h *Handler) CreateRecord(w http.ResponseWriter, r *http.Request) {
+	var request models.TransformRequest
 
 	err := json.NewDecoder(r.Body).Decode(&request)
 	if err != nil {
-		ResponseWithJSON(w, http.StatusBadRequest, err.Error())
+		ResponseWithJSON(w, http.StatusBadRequest, errJSON{Error: err.Error()})
 	}
 
 	err = request.Validate()
 	if err != nil {
-		ResponseWithJSON(w, http.StatusUnprocessableEntity, err.Error())
+		ResponseWithJSON(w, http.StatusUnprocessableEntity, errJSON{Error: err.Error()})
 	}
 
-	result, err := h.service.CreateRecord(*request)
+	result, err := h.service.CreateRecord(request)
 	if err != nil {
-		ResponseWithJSON(w, http.StatusInternalServerError, err.Error())
+		ResponseWithJSON(w, http.StatusInternalServerError, errJSON{Error: err.Error()})
 	}
 
 	ResponseWithJSON(w, http.StatusCreated, result)
+}
+
+type errJSON struct {
+	Error string
 }
 
 func (h *Handler) DeleteRecord(w http.ResponseWriter, r *http.Request) {
@@ -90,17 +98,16 @@ func (h *Handler) DeleteRecord(w http.ResponseWriter, r *http.Request) {
 
 	err := h.service.DeleteRecord(id)
 	if err != nil {
-		ResponseWithJSON(w, http.StatusInternalServerError, err.Error())
+		ResponseWithJSON(w, http.StatusInternalServerError, errJSON{Error: err.Error()})
 	}
 
-	w.Header().Add("Content-Type", "application/json")
-	w.WriteHeader(http.StatusNoContent)
+	ResponseWithJSON(w, http.StatusNoContent, nil)
 }
 
 func (h *Handler) GetAllRecords(w http.ResponseWriter, r *http.Request) {
 	values, err := h.service.GetAllRecords()
 	if err != nil {
-		ResponseWithJSON(w, http.StatusInternalServerError, err.Error())
+		ResponseWithJSON(w, http.StatusInternalServerError, errJSON{Error: err.Error()})
 	}
 
 	ResponseWithJSON(w, http.StatusOK, values)
@@ -111,7 +118,12 @@ func (h *Handler) GetRecord(w http.ResponseWriter, r *http.Request) {
 
 	result, err := h.service.GetRecord(id)
 	if err != nil {
-		ResponseWithJSON(w, http.StatusInternalServerError, err.Error())
+		if errors.Is(err, sql.ErrNoRows) {
+			ResponseWithJSON(w, http.StatusNotFound, errJSON{Error: err.Error()})
+			return
+		}
+
+		ResponseWithJSON(w, http.StatusInternalServerError, errJSON{Error: err.Error()})
 	}
 
 	ResponseWithJSON(w, http.StatusOK, result)
@@ -123,12 +135,12 @@ func (h *Handler) UpdateRecord(w http.ResponseWriter, r *http.Request) {
 
 	err := json.NewDecoder(r.Body).Decode(&request)
 	if err != nil {
-		ResponseWithJSON(w, http.StatusBadRequest, err.Error())
+		ResponseWithJSON(w, http.StatusBadRequest, errJSON{Error: err.Error()})
 	}
 
 	err = request.Validate()
 	if err != nil {
-		ResponseWithJSON(w, http.StatusUnprocessableEntity, err.Error())
+		ResponseWithJSON(w, http.StatusUnprocessableEntity, errJSON{Error: err.Error()})
 	}
 
 	result := h.service.UpdateRecord(id, *request)

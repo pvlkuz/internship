@@ -2,14 +2,12 @@ package cache
 
 import (
 	"main/models"
-	"main/service"
 	"testing"
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/stretchr/testify/assert"
 )
-
-var cache service.Cache
 
 var records = []models.Record{
 	{
@@ -42,36 +40,59 @@ var records = []models.Record{
 	},
 }
 
-func Test_NewLruCache(t *testing.T) {
-	cache = NewLruCache(3)
+func Test_LruSetAndGet(t *testing.T) {
+	cache := NewLruCache(3)
+
+	cache.Set(&records[0])
+
+	result, _ := cache.Get(records[0].ID)
+	assert.Equal(t, records[0], *result)
 }
 
-func Test_LruCache(t *testing.T) {
-	cache.Set(&records[0])
-	cache.Set(&records[0])
+func Test_LruDelete(t *testing.T) {
+	cache := NewLruCache(3)
 
+	cache.Set(&records[0])
+	cache.Delete(records[0].ID)
+
+	_, ok := cache.Get(records[0].ID)
+	assert.Equal(t, false, ok)
+}
+
+func Test_LruCheckCapacity(t *testing.T) {
+	cache := NewLruCache(3)
+
+	cache.Set(&records[0])
 	cache.Set(&records[1])
 	cache.Set(&records[2])
 	cache.Set(&records[3])
 
-	cache.Get(records[1].ID)
-	cache.Get(records[0].ID)
+	// Check that 1st value is auto-deleted
+	_, ok := cache.Get(records[0].ID)
+	assert.Equal(t, false, ok)
 
-	cache.Delete(records[3].ID)
+	// Check that 2nd value is still there
+	result, ok := cache.Get(records[1].ID)
+	assert.Equal(t, true, ok)
+	assert.Equal(t, records[1], *result)
+
 }
 
-func Test_NewInMemoCache(t *testing.T) {
-	cache = NewInMemoCache()
-}
+func Test_InMemoSetAndGet(t *testing.T) {
+	cache := NewInMemoCache()
 
-func Test_InMemoCache(t *testing.T) {
 	cache.Set(&records[0])
-	cache.Set(&records[1])
-	cache.Set(&records[2])
-	cache.Set(&records[3])
 
-	cache.Get(records[1].ID)
-	cache.Get(records[0].ID)
+	result, _ := cache.Get(records[0].ID)
+	assert.Equal(t, records[0], *result)
+}
 
-	cache.Delete(records[2].ID)
+func Test_InMemoDelete(t *testing.T) {
+	cache := NewInMemoCache()
+
+	cache.Set(&records[0])
+	cache.Delete(records[0].ID)
+
+	_, ok := cache.Get(records[0].ID)
+	assert.Equal(t, false, ok)
 }
