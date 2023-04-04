@@ -1,6 +1,7 @@
 package database
 
 import (
+	"database/sql"
 	"log"
 	"main/models"
 	"sort"
@@ -141,7 +142,7 @@ func Test_Delete(t *testing.T) {
 	assert.Nil(t, err)
 
 	_, err = db.GetRecord(records[0].ID)
-	assert.Nil(t, err)
+	assert.ErrorIs(t, err, sql.ErrNoRows)
 
 	err = m.Down()
 	if err != nil {
