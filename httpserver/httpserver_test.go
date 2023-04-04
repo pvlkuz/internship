@@ -1,9 +1,8 @@
 package httpserver
 
 import (
+	"bytes"
 	"encoding/json"
-	"fmt"
-	"strings"
 
 	"main/models"
 	"net/http"
@@ -50,10 +49,10 @@ func (mock *MockService) DeleteRecord(id string) error {
 	return nil
 }
 
-var TestRequest = []models.TransformRequest{
-	{Type: "caesar", CaesarShift: -3, Input: "abc"},
-	{Type: "reverse", CaesarShift: 0, Input: "54321"},
-	{Type: "base64", CaesarShift: 0, Input: "Man"},
+var TestRequest = models.TransformRequest{
+	Type:        "caesar",
+	CaesarShift: -3,
+	Input:       "abc",
 }
 
 var TestRecord = models.Record{
@@ -67,24 +66,22 @@ func Test_CreateRecord(t *testing.T) {
 	service := new(MockService)
 	h := NewHandler(service)
 
-	req, err := http.NewRequest("POST", "/records", strings.NewReader(fmt.Sprintf(`{"type":"%s", "input":"%s", "shift":%d}`, TestRequest[0].Type, TestRequest[0].Input, TestRequest[0].CaesarShift)))
-	// if err != nil {
-	// 	t.Fatalf("failed to create request: %s", err)
-	// }
-	require.ErrorIs(t, err, nil)
+	data, err := json.Marshal(TestRequest)
+	require.NoError(t, err)
+	req, err := http.NewRequest("POST", "/records", bytes.NewReader(data))
+	require.NoError(t, err)
+
 	rr := httptest.NewRecorder()
 	handler := http.HandlerFunc(h.CreateRecord)
 	handler.ServeHTTP(rr, req)
-	if rr.Code != http.StatusCreated {
-		t.Errorf("handler returned wrong status code: got %v want %v",
-			rr.Code, http.StatusCreated)
-	}
+
+	assert.Equal(t, http.StatusCreated, rr.Code)
+
 	res := models.Record{}
 	dec := json.NewDecoder(rr.Body)
 	err = dec.Decode(&res)
-	if err != nil {
-		t.Errorf("decoding error")
-	}
+	assert.ErrorIs(t, err, nil)
+
 	assert.Equal(t, TestRecord, res)
 }
 
@@ -93,22 +90,18 @@ func Test_GetAllRecords(t *testing.T) {
 	h := NewHandler(service)
 
 	req, err := http.NewRequest("GET", "/records", nil)
-	if err != nil {
-		t.Fatalf("failed to create request: %s", err)
-	}
+	require.ErrorIs(t, err, nil)
+
 	rr := httptest.NewRecorder()
 	handler := http.HandlerFunc(h.GetAllRecords)
 	handler.ServeHTTP(rr, req)
-	if rr.Code != http.StatusOK {
-		t.Errorf("handler returned wrong status code: got %v want %v",
-			rr.Code, http.StatusOK)
-	}
+
+	assert.Equal(t, http.StatusOK, rr.Code)
+
 	res := []models.Record{}
 	dec := json.NewDecoder(rr.Body)
 	err = dec.Decode(&res)
-	if err != nil {
-		t.Errorf("decoding error")
-	}
+	assert.ErrorIs(t, err, nil)
 
 	assert.Equal(t, []models.Record{
 		{
@@ -131,22 +124,17 @@ func Test_GetRecord(t *testing.T) {
 	h := NewHandler(service)
 
 	req, err := http.NewRequest("GET", "/records/1111", nil)
-	if err != nil {
-		t.Fatalf("failed to create request: %s", err)
-	}
+	require.ErrorIs(t, err, nil)
+
 	rr := httptest.NewRecorder()
 	handler := http.HandlerFunc(h.GetRecord)
 	handler.ServeHTTP(rr, req)
-	if rr.Code != http.StatusOK {
-		t.Errorf("handler returned wrong status code: got %v want %v",
-			rr.Code, http.StatusOK)
-	}
+	assert.Equal(t, http.StatusOK, rr.Code)
+
 	res := models.Record{}
 	dec := json.NewDecoder(rr.Body)
 	err = dec.Decode(&res)
-	if err != nil {
-		t.Errorf("decoding error")
-	}
+	assert.ErrorIs(t, err, nil)
 
 	assert.Equal(t, TestRecord, res)
 }
@@ -155,23 +143,20 @@ func Test_UpdateRecord(t *testing.T) {
 	service := new(MockService)
 	h := NewHandler(service)
 
-	req, err := http.NewRequest("PUT", "/records/1111", strings.NewReader(fmt.Sprintf(`{"type":"%s", "input":"%s", "shift":%d}`, TestRequest[0].Type, TestRequest[0].Input, TestRequest[0].CaesarShift)))
-	if err != nil {
-		t.Fatalf("failed to create request: %s", err)
-	}
+	data, err := json.Marshal(TestRequest)
+	require.NoError(t, err)
+	req, err := http.NewRequest("PUT", "/records/1111", bytes.NewReader(data))
+	require.NoError(t, err)
+
 	rr := httptest.NewRecorder()
 	handler := http.HandlerFunc(h.UpdateRecord)
 	handler.ServeHTTP(rr, req)
-	if rr.Code != http.StatusOK {
-		t.Errorf("handler returned wrong status code: got %v want %v",
-			rr.Code, http.StatusOK)
-	}
+	assert.Equal(t, http.StatusOK, rr.Code)
+
 	res := models.Record{}
 	dec := json.NewDecoder(rr.Body)
 	err = dec.Decode(&res)
-	if err != nil {
-		t.Errorf("decoding error")
-	}
+	assert.ErrorIs(t, err, nil)
 
 	assert.Equal(t, TestRecord, res)
 }
@@ -180,17 +165,12 @@ func Test_DeleteRecord(t *testing.T) {
 	service := new(MockService)
 	h := NewHandler(service)
 
-	stringURL := fmt.Sprintf("http://localhost/records/%s", "1111")
-	req, err := http.NewRequest("DELETE", stringURL, nil)
-	if err != nil {
-		t.Fatalf("failer to create request: %s", err)
-	}
+	req, err := http.NewRequest("DELETE", "/records/1111", nil)
+	require.ErrorIs(t, err, nil)
+
 	rr := httptest.NewRecorder()
 	handler := http.HandlerFunc(h.DeleteRecord)
 	handler.ServeHTTP(rr, req)
-	if rr.Code != http.StatusNoContent {
-		t.Errorf("handler returned wrong status code: got %v want %v",
-			rr.Code, http.StatusNoContent)
-	}
+	assert.Equal(t, http.StatusNoContent, rr.Code)
 
 }

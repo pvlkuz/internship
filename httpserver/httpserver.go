@@ -65,7 +65,7 @@ func ResponseWithJSON(w http.ResponseWriter, statusCode int, data interface{}) {
 	}
 
 	w.WriteHeader(statusCode)
-	w.Write(b)
+	w.Write(b) //nolint:errcheck
 }
 
 func (h *Handler) CreateRecord(w http.ResponseWriter, r *http.Request) {

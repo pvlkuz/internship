@@ -11,9 +11,7 @@ import (
 	"main/service"
 	"main/transformer"
 	"os"
-	"time"
 
-	"github.com/golang-migrate/migrate/v4"
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 )
@@ -117,26 +115,15 @@ func main() {
 	case "transform":
 		transform()
 	case "crud":
-		m, err := migrate.New("file://./migration", connStr)
-		if err != nil {
-			time.Sleep(2 * time.Second)
-
-			m, err = migrate.New("file://./migration", connStr)
-			if err != nil {
-				log.Print(fmt.Errorf("failed to migration init: %w", err))
-				return
-			}
-		}
-
-		err = m.Up()
-		if err != nil {
-			log.Print(fmt.Errorf("failed to migrate up: %w", err))
-			return
-		}
-
 		db, err := database.NewDB(connStr)
 		if err != nil {
 			log.Print(fmt.Errorf("failed to initialize db: %w", err))
+			return
+		}
+
+		err = db.Migr(connStr)
+		if err != nil {
+			log.Print(fmt.Errorf("failed to migrate up: %w", err))
 			return
 		}
 

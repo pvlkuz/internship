@@ -12,9 +12,26 @@ import (
 	"github.com/golang-migrate/migrate/v4"
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
-	"github.com/google/uuid"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
+
+var TestRecords = []models.Record{
+	{
+		ID:          "1111",
+		Type:        "reverse",
+		CaesarShift: 0,
+		Result:      "54321",
+		CreatedAt:   time.Now(),
+	},
+	{
+		ID:          "2222",
+		Type:        "caesar",
+		CaesarShift: -3,
+		Result:      "xyz",
+		CreatedAt:   time.Now(),
+	},
+}
 
 type MockDB struct {
 	mock.Mock
@@ -24,32 +41,11 @@ func (mock *MockDB) CreateRecord(r *models.Record) error {
 	return nil
 }
 func (mock *MockDB) GetRecord(id string) (models.Record, error) {
-	result := models.Record{
-		ID:          "1111",
-		Type:        "reverse",
-		CaesarShift: 0,
-		Result:      "54321",
-		CreatedAt:   time.Now(),
-	}
+	result := TestRecords[0]
 	return result, nil
 }
 func (mock *MockDB) GetAllRecords() ([]models.Record, error) {
-	result := []models.Record{
-		{
-			ID:          uuid.NewString(),
-			Type:        "reverse",
-			CaesarShift: 0,
-			Result:      "54321",
-			CreatedAt:   time.Now(),
-		},
-		{
-			ID:          uuid.NewString(),
-			Type:        "caesar",
-			CaesarShift: -3,
-			Result:      "xyz",
-			CreatedAt:   time.Now(),
-		},
-	}
+	result := TestRecords
 	return result, nil
 }
 func (mock *MockDB) UpdateRecord(r *models.Record) error {
@@ -90,13 +86,17 @@ func Test_NewRecord(t *testing.T) {
 func Test_GetRecord(t *testing.T) {
 	TestService := NewService(new(MockDB), new(MockCache))
 
-	TestService.GetRecord("123")
+	res, err := TestService.GetRecord("1111")
+	assert.ErrorIs(t, err, nil)
+	assert.Equal(t, TestRecords[0], *res)
 }
 
 func Test_GetAllRecords(t *testing.T) {
 	TestService := NewService(new(MockDB), new(MockCache))
 
-	TestService.GetAllRecords()
+	res, err := TestService.GetAllRecords()
+	assert.ErrorIs(t, err, nil)
+	assert.Equal(t, TestRecords, res)
 }
 
 func Test_UpdateRecord(t *testing.T) {
@@ -105,12 +105,16 @@ func Test_UpdateRecord(t *testing.T) {
 	for _, test := range NewRecordRequestTable {
 		TestService.UpdateRecord("123", test)
 	}
+
+	res := TestService.UpdateRecord("1111", NewRecordRequestTable[0])
+	assert.Equal(t, TestRecords[0], *res)
 }
 
 func Test_DeleteRecord(t *testing.T) {
 	TestService := NewService(new(MockDB), new(MockCache))
 
-	TestService.DeleteRecord("123")
+	err := TestService.DeleteRecord("123")
+	assert.ErrorIs(t, err, nil)
 }
 
 const connStr = "postgresql://postgres:password@localhost:5432/postgres?sslmode=disable"

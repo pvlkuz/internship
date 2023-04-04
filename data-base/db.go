@@ -1,9 +1,13 @@
 package database
 
 import (
+	"errors"
 	"fmt"
 	"main/models"
 
+	"github.com/golang-migrate/migrate/v4"
+	_ "github.com/golang-migrate/migrate/v4/database/postgres"
+	_ "github.com/golang-migrate/migrate/v4/source/file"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
 )
@@ -15,6 +19,24 @@ const (
 	queryUpdate     = `UPDATE records SET transform_type = $1, caesar_shift = $2, result = $3 WHERE id = $4 RETURNING *`
 	queryDelete     = `DELETE FROM records WHERE id = $1`
 )
+
+func (db *Database) Migr(connStr string) error {
+	m, err := migrate.New("file://./migration", connStr)
+	if err != nil {
+		return fmt.Errorf("craating migration err: %w", err)
+	}
+
+	err = m.Up()
+	if err != nil {
+		if errors.Is(err, migrate.ErrNoChange) {
+			return fmt.Errorf("no changes: %w", err)
+		}
+
+		return fmt.Errorf("migration up err: %w", err)
+	}
+
+	return nil
+}
 
 func NewDB(connStr string) (*Database, error) {
 	db, err := sqlx.Open("postgres", connStr)
