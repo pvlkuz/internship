@@ -1,0 +1,42 @@
+run:
+  # include test files or not, default is true
+  tests: false
+  skip-dirs:
+    - vendor
+
+linters:
+  enable-all: true
+  disable:
+    - gci
+    - ifshort
+    - gomnd
+    - nlreturn
+    - gofumpt
+    - varnamelen
+    - exhaustivestruct
+    - exhaustruct
+    - golint
+
+# all available settings of specific linters
+linters-settings:
+  dupl:
+    # tokens count to trigger issue, 150 by default
+    threshold: 220
+  misspell:
+    locale: US
+  promlinter:
+    disabled-linters:
+      - "Help"
+  cyclop:
+    max-complexity: 17
+    skip-tests: true
+  revive:
+    rules:
+      - name: blank-imports
+        severity: warning
+        disabled: true
+  lll:
+    line-length: 135
+  funlen:
+    statements: 50
+    lines: 75
