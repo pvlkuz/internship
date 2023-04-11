@@ -121,7 +121,7 @@ func main() {
 			return
 		}
 
-		err = db.Migr(connStr)
+		err = db.MigrateUp(connStr, "./migration")
 		if err != nil {
 			log.Print(fmt.Errorf("failed to migrate up: %w", err))
 			return

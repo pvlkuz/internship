@@ -112,10 +112,10 @@ func (s Service) GetRecord(id string) (*models.Record, error) {
 	return &result, nil
 }
 
-func (s Service) UpdateRecord(id string, request models.TransformRequest) *models.Record {
+func (s Service) UpdateRecord(id string, request models.TransformRequest) (*models.Record, error) {
 	transformResult, err := SwitchAndTransform(request)
 	if err != nil {
-		return nil
+		return nil, fmt.Errorf("transform error: %w", err)
 	}
 
 	result, _ := s.db.GetRecord(id)
@@ -128,23 +128,23 @@ func (s Service) UpdateRecord(id string, request models.TransformRequest) *model
 
 		err = s.db.CreateRecord(&result)
 		if err != nil {
-			return nil
+			return nil, fmt.Errorf("create error: %w", err)
 		}
 
-		return &result
+		return &result, nil
 	}
 
 	err = s.db.UpdateRecord(&result)
 	if err != nil {
-		return nil
+		return nil, fmt.Errorf("upadate error: %w", err)
 	}
 
 	res, err := s.db.GetRecord(result.ID)
 	if err != nil {
-		return nil
+		return nil, fmt.Errorf("showing changes error: %w", err)
 	}
 
 	s.cache.Set(&res)
 
-	return &res
+	return &res, nil
 }

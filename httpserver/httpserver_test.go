@@ -14,17 +14,17 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-type MockService struct {
+type mockService struct {
 	mock.Mock
 }
 
-func (mock *MockService) CreateRecord(request models.TransformRequest) (*models.Record, error) {
+func (mock *mockService) CreateRecord(request models.TransformRequest) (*models.Record, error) {
 	return &TestRecord, nil
 }
-func (mock *MockService) GetRecord(id string) (*models.Record, error) {
+func (mock *mockService) GetRecord(id string) (*models.Record, error) {
 	return &TestRecord, nil
 }
-func (mock *MockService) GetAllRecords() ([]models.Record, error) {
+func (mock *mockService) GetAllRecords() ([]models.Record, error) {
 	res := []models.Record{
 		{
 			ID:          "11",
@@ -42,10 +42,10 @@ func (mock *MockService) GetAllRecords() ([]models.Record, error) {
 
 	return res, nil
 }
-func (mock *MockService) UpdateRecord(id string, request models.TransformRequest) *models.Record {
-	return &TestRecord
+func (mock *mockService) UpdateRecord(id string, request models.TransformRequest) (*models.Record, error) {
+	return &TestRecord, nil
 }
-func (mock *MockService) DeleteRecord(id string) error {
+func (mock *mockService) DeleteRecord(id string) error {
 	return nil
 }
 
@@ -63,7 +63,7 @@ var TestRecord = models.Record{
 }
 
 func Test_CreateRecord(t *testing.T) {
-	service := new(MockService)
+	service := new(mockService)
 	h := NewHandler(service)
 
 	data, err := json.Marshal(TestRequest)
@@ -86,7 +86,7 @@ func Test_CreateRecord(t *testing.T) {
 }
 
 func Test_GetAllRecords(t *testing.T) {
-	service := new(MockService)
+	service := new(mockService)
 	h := NewHandler(service)
 
 	req, err := http.NewRequest("GET", "/records", nil)
@@ -120,7 +120,7 @@ func Test_GetAllRecords(t *testing.T) {
 }
 
 func Test_GetRecord(t *testing.T) {
-	service := new(MockService)
+	service := new(mockService)
 	h := NewHandler(service)
 
 	req, err := http.NewRequest("GET", "/records/1111", nil)
@@ -140,7 +140,7 @@ func Test_GetRecord(t *testing.T) {
 }
 
 func Test_UpdateRecord(t *testing.T) {
-	service := new(MockService)
+	service := new(mockService)
 	h := NewHandler(service)
 
 	data, err := json.Marshal(TestRequest)
@@ -162,7 +162,7 @@ func Test_UpdateRecord(t *testing.T) {
 }
 
 func Test_DeleteRecord(t *testing.T) {
-	service := new(MockService)
+	service := new(mockService)
 	h := NewHandler(service)
 
 	req, err := http.NewRequest("DELETE", "/records/1111", nil)

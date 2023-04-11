@@ -2,80 +2,56 @@ package database
 
 import (
 	"database/sql"
-	"log"
 	"main/models"
 	"sort"
 	"testing"
-	"time"
 
-	"github.com/golang-migrate/migrate/v4"
-	_ "github.com/golang-migrate/migrate/v4/database/postgres"
-	_ "github.com/golang-migrate/migrate/v4/source/file"
 	"github.com/google/uuid"
 	_ "github.com/lib/pq"
 	"github.com/stretchr/testify/assert"
 )
 
-var db *Database
-var myTime = time.Date(2023, 3, 3, 12, 0, 0, 0, time.FixedZone("", 0)) // manually set location to Greenwich
+const connStr = "postgresql://postgres:password@localhost:5432/postgres?sslmode=disable"
+
 var records = []models.Record{
 	{
 		ID:          uuid.NewString(),
 		Type:        "reverse",
 		CaesarShift: 0,
 		Result:      "321",
-		//CreatedAt:   myTime,
 	},
 	{
 		ID:          uuid.NewString(),
 		Type:        "reverse",
 		CaesarShift: 0,
 		Result:      "54321",
-		//CreatedAt:   myTime,
 	},
 }
 
-const connStr = "postgresql://postgres:password@localhost:5432/postgres?sslmode=disable"
-
-func Test_NewDB(t *testing.T) {
-	var err error
-	db, err = NewDB(connStr)
-	if err != nil {
-		log.Fatalf("failed to initialize db: %s", err.Error())
-	}
-}
-
 func Test_CreateAndRead(t *testing.T) {
-	m, err := migrate.New("file://.././migration", connStr)
-	if err != nil {
-		log.Fatalf("failed to migration init: %s", err.Error())
-	}
-	err = m.Up()
-	if err != nil {
-		log.Fatalf("failed to migrate up: %s", err.Error())
-	}
+	db, err := NewDB(connStr)
+	assert.Nil(t, err)
+
+	err = db.MigrateUp(connStr, ".././migration")
+	assert.Nil(t, err)
 
 	err = db.CreateRecord(&records[0])
 	assert.Nil(t, err)
+
 	result, err := db.GetRecord(records[0].ID)
 	assert.Nil(t, err)
 	assert.Equal(t, records[0], result)
 
-	err = m.Down()
-	if err != nil {
-		log.Fatalf("failed to migrate down: %s", err.Error())
-	}
+	err = db.MigrateDown(connStr, ".././migration")
+	assert.Nil(t, err)
 }
 
 func Test_ReadAll(t *testing.T) {
-	m, err := migrate.New("file://.././migration", connStr)
-	if err != nil {
-		log.Fatalf("failed to migration init: %s", err.Error())
-	}
-	err = m.Up()
-	if err != nil {
-		log.Fatalf("failed to migrate up: %s", err.Error())
-	}
+	db, err := NewDB(connStr)
+	assert.Nil(t, err)
+
+	err = db.MigrateUp(connStr, ".././migration")
+	assert.Nil(t, err)
 
 	err = db.CreateRecord(&records[0])
 	assert.Nil(t, err)
@@ -90,21 +66,16 @@ func Test_ReadAll(t *testing.T) {
 
 	assert.Equal(t, records, results)
 
-	err = m.Down()
-	if err != nil {
-		log.Fatalf("failed to migrate down: %s", err.Error())
-	}
+	err = db.MigrateDown(connStr, ".././migration")
+	assert.Nil(t, err)
 }
 
 func Test_Update(t *testing.T) {
-	m, err := migrate.New("file://.././migration", connStr)
-	if err != nil {
-		log.Fatalf("failed to migration init: %s", err.Error())
-	}
-	err = m.Up()
-	if err != nil {
-		log.Fatalf("failed to migrate up: %s", err.Error())
-	}
+	db, err := NewDB(connStr)
+	assert.Nil(t, err)
+
+	err = db.MigrateUp(connStr, ".././migration")
+	assert.Nil(t, err)
 
 	record := models.Record{
 		ID:          records[0].ID,
@@ -120,21 +91,16 @@ func Test_Update(t *testing.T) {
 	err = db.UpdateRecord(&record)
 	assert.Nil(t, err)
 
-	err = m.Down()
-	if err != nil {
-		log.Fatalf("failed to migrate down: %s", err.Error())
-	}
+	err = db.MigrateDown(connStr, ".././migration")
+	assert.Nil(t, err)
 }
 
 func Test_Delete(t *testing.T) {
-	m, err := migrate.New("file://.././migration", connStr)
-	if err != nil {
-		log.Fatalf("failed to migration init: %s", err.Error())
-	}
-	err = m.Up()
-	if err != nil {
-		log.Fatalf("failed to migrate up: %s", err.Error())
-	}
+	db, err := NewDB(connStr)
+	assert.Nil(t, err)
+
+	err = db.MigrateUp(connStr, ".././migration")
+	assert.Nil(t, err)
 
 	err = db.CreateRecord(&records[0])
 	assert.Nil(t, err)
@@ -144,8 +110,6 @@ func Test_Delete(t *testing.T) {
 	_, err = db.GetRecord(records[0].ID)
 	assert.ErrorIs(t, err, sql.ErrNoRows)
 
-	err = m.Down()
-	if err != nil {
-		log.Fatalf("failed to migrate down: %s", err.Error())
-	}
+	err = db.MigrateDown(connStr, ".././migration")
+	assert.Nil(t, err)
 }

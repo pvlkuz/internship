@@ -17,8 +17,12 @@ type Service interface {
 	CreateRecord(request models.TransformRequest) (*models.Record, error)
 	GetRecord(id string) (*models.Record, error)
 	GetAllRecords() ([]models.Record, error)
-	UpdateRecord(id string, request models.TransformRequest) *models.Record
+	UpdateRecord(id string, request models.TransformRequest) (*models.Record, error)
 	DeleteRecord(id string) error
+}
+
+type errJSON struct {
+	Error string `json:"error"`
 }
 
 type Handler struct {
@@ -55,19 +59,6 @@ func (h *Handler) RunServer() error {
 	return nil
 }
 
-func ResponseWithJSON(w http.ResponseWriter, statusCode int, data interface{}) {
-	w.Header().Add("Content-Type", "application/json")
-
-	b, err := json.Marshal(data)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
-	w.WriteHeader(statusCode)
-	w.Write(b) //nolint:errcheck
-}
-
 func (h *Handler) CreateRecord(w http.ResponseWriter, r *http.Request) {
 	var request models.TransformRequest
 
@@ -87,10 +78,6 @@ func (h *Handler) CreateRecord(w http.ResponseWriter, r *http.Request) {
 	}
 
 	ResponseWithJSON(w, http.StatusCreated, result)
-}
-
-type errJSON struct {
-	Error string
 }
 
 func (h *Handler) DeleteRecord(w http.ResponseWriter, r *http.Request) {
@@ -143,7 +130,23 @@ func (h *Handler) UpdateRecord(w http.ResponseWriter, r *http.Request) {
 		ResponseWithJSON(w, http.StatusUnprocessableEntity, errJSON{Error: err.Error()})
 	}
 
-	result := h.service.UpdateRecord(id, *request)
+	result, err := h.service.UpdateRecord(id, *request)
+	if err != nil {
+		ResponseWithJSON(w, http.StatusInternalServerError, errJSON{Error: err.Error()})
+	}
 
 	ResponseWithJSON(w, http.StatusOK, result)
+}
+
+func ResponseWithJSON(w http.ResponseWriter, statusCode int, data interface{}) {
+	w.Header().Add("Content-Type", "application/json")
+
+	b, err := json.Marshal(data)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(statusCode)
+	w.Write(b) //nolint:errcheck
 }

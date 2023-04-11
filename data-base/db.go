@@ -20,22 +20,8 @@ const (
 	queryDelete     = `DELETE FROM records WHERE id = $1`
 )
 
-func (db *Database) Migr(connStr string) error {
-	m, err := migrate.New("file://./migration", connStr)
-	if err != nil {
-		return fmt.Errorf("craating migration err: %w", err)
-	}
-
-	err = m.Up()
-	if err != nil {
-		if errors.Is(err, migrate.ErrNoChange) {
-			return fmt.Errorf("no changes: %w", err)
-		}
-
-		return fmt.Errorf("migration up err: %w", err)
-	}
-
-	return nil
+type Database struct {
+	*sqlx.DB
 }
 
 func NewDB(connStr string) (*Database, error) {
@@ -50,10 +36,6 @@ func NewDB(connStr string) (*Database, error) {
 	}
 
 	return &Database{DB: db}, nil
-}
-
-type Database struct {
-	*sqlx.DB
 }
 
 func (db *Database) CreateRecord(r *models.Record) error {
@@ -100,6 +82,42 @@ func (db *Database) DeleteRecord(id string) error {
 	_, err := db.Exec(queryDelete, id)
 	if err != nil {
 		return fmt.Errorf("deleting record: %w", err)
+	}
+
+	return nil
+}
+
+func (db *Database) MigrateUp(connStr string, path string) error {
+	filePath := fmt.Sprintf("file://%s", path)
+
+	m, err := migrate.New(filePath, connStr)
+	if err != nil {
+		return fmt.Errorf("creating migration err: %w", err)
+	}
+
+	err = m.Up()
+	if err != nil {
+		if errors.Is(err, migrate.ErrNoChange) {
+			return nil
+		}
+
+		return fmt.Errorf("migration up err: %w", err)
+	}
+
+	return nil
+}
+
+func (db *Database) MigrateDown(connStr string, path string) error {
+	filePath := fmt.Sprintf("file://%s", path)
+
+	m, err := migrate.New(filePath, connStr)
+	if err != nil {
+		return fmt.Errorf("creating migration err: %w", err)
+	}
+
+	err = m.Down()
+	if err != nil {
+		return fmt.Errorf("migration up err: %w", err)
 	}
 
 	return nil
